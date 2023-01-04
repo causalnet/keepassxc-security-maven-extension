@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
