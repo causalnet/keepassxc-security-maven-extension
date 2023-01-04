@@ -80,7 +80,7 @@ public class LinuxMacConnection extends AccessibleConnection
                 if (socket.read(buffer) == -1) break;
             } catch (IOException e) {
                 //Change: added AsynchronousCloseException check
-                if (!(e.getCause() instanceof AsynchronousCloseException))
+                if (!(e instanceof AsynchronousCloseException))
                     LOG.error(e.toString(), e.getCause());
                 //Change: end
 
