@@ -13,6 +13,7 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +25,7 @@ extends AbstractLogEnabled
 implements PasswordDecryptor
 {
     private final PasswordDecryptor passwordDecryptor;
-    private final LoadingCache<String, String> passwordCache;
+    private final LoadingCache<DecryptKey, String> passwordCache;
 
     public CachingPasswordDecrypter(PasswordDecryptor passwordDecryptor, Duration cacheExpireTime)
     {
@@ -35,10 +36,10 @@ implements PasswordDecryptor
                         .build(new CacheLoader<>()
                 {
                     @Override
-                    public String load(String key)
+                    public String load(DecryptKey key)
                     throws Exception
                     {
-                        return passwordDecryptor.decrypt(key, Map.of(), Map.of());
+                        return passwordDecryptor.decrypt(key.str, key.attributes, key.config);
                     }
                 });
     }
@@ -57,7 +58,7 @@ implements PasswordDecryptor
     {
         try
         {
-            return passwordCache.get(str);
+            return passwordCache.get(new DecryptKey(str, attributes, config));
         }
         catch (ExecutionException e)
         {
@@ -69,6 +70,46 @@ implements PasswordDecryptor
                 throw (Error)e.getCause();
             else
                 throw new UncheckedExecutionException(e);
+        }
+    }
+
+    protected static class DecryptKey
+    {
+        private final String str;
+        private final Map<?, ?> attributes;
+        private final Map<?, ?> config;
+
+        public DecryptKey(String str, Map<?, ?> attributes, Map<?, ?> config)
+        {
+            this.str = str;
+            this.attributes = attributes;
+            this.config = config;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (!(o instanceof DecryptKey that)) return false;
+            return Objects.equals(str, that.str) &&
+                   Objects.equals(attributes, that.attributes) &&
+                   Objects.equals(config, that.config);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(str, attributes, config);
+        }
+
+        @Override
+        public String toString()
+        {
+            return new StringJoiner(", ", DecryptKey.class.getSimpleName() + "[", "]")
+                    .add("str='" + str + "'")
+                    .add("attributes=" + attributes)
+                    .add("config=" + config)
+                    .toString();
         }
     }
 }
