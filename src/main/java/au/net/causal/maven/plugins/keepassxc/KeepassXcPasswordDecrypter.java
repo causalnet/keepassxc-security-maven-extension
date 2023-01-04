@@ -1,6 +1,6 @@
 package au.net.causal.maven.plugins.keepassxc;
 
-import org.codehaus.plexus.component.annotations.Component;
+import au.net.causal.maven.plugins.keepassxc.connection.KeepassProxy;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
 import org.purejava.KeepassProxyAccess;
 import org.purejava.KeepassProxyAccessException;
