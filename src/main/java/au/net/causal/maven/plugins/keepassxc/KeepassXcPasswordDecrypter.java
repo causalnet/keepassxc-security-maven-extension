@@ -3,9 +3,11 @@ package au.net.causal.maven.plugins.keepassxc;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
 import org.purejava.KeepassProxyAccess;
+import org.purejava.KeepassProxyAccessException;
 import org.sonatype.plexus.components.sec.dispatcher.PasswordDecryptor;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +25,50 @@ public class KeepassXcPasswordDecrypter
 extends AbstractLogEnabled
 implements PasswordDecryptor
 {
-    @Override
-    public String decrypt(String str, Map attributes, Map config)
+    private KeepassProxy connectKeepassProxy()
+    throws SecDispatcherException
+    {
+        KeepassProxy kpa;
+        try
+        {
+            kpa = new KeepassProxy(new MavenKeepassCredentialsStore());
+        }
+        catch (IOException e)
+        {
+            throw new SecDispatcherException("Error initializing Keepass proxy: " + e, e);
+        }
+
+        try
+        {
+            kpa.connect();
+        }
+        catch (IOException e)
+        {
+            throw new SecDispatcherException("Failed to connect to keepass", e);
+        }
+
+        boolean connected = kpa.connectionAvailable();
+        if (!connected)
+            connected = kpa.associate();
+
+        try
+        {
+            while (!connected)
+            {
+                getLogger().info("Waiting for Keepass connection...");
+                Thread.sleep(1000L);
+                connected = kpa.connectionAvailable();
+            }
+        }
+        catch (InterruptedException e)
+        {
+            throw new SecDispatcherException("Interrupted while waiting for KeepassXC", e);
+        }
+
+        return kpa;
+    }
+
+    private KeepassProxyAccess connectKeepassOrig()
     throws SecDispatcherException
     {
         var kpa = new KeepassProxyAccess();
@@ -70,18 +114,35 @@ implements PasswordDecryptor
             throw new SecDispatcherException("Interrupted while waiting for KeepassXC", e);
         }
 
-        String entryName = str;
-        getLogger().info("Need to grab entry '" + entryName + "' from KeepassXC");
+        return kpa;
+    }
 
-        var results = kpa.getLogins("maven://" + entryName, null, true, List.of(kpa.exportConnection()));
-        if (results == null)
-            throw new SecDispatcherException("No KeepassXC entry for " + entryName);
+    @Override
+    public String decrypt(String str, Map attributes, Map config)
+    throws SecDispatcherException
+    {
+        try (var kpa = connectKeepassProxy())
+        {
+            String entryName = str;
+            getLogger().info("Need to grab entry '" + entryName + "' from KeepassXC");
 
-        String password = nestedMapValue(results, "entries", "password");
-        if (password == null)
-            throw new SecDispatcherException("No KeepassXC entry for " + entryName);
+            try
+            {
+                var results = kpa.getLogins("maven://" + entryName, null, true, List.of(kpa.exportConnection()));
+                if (results == null)
+                    throw new SecDispatcherException("No KeepassXC entry for " + entryName);
 
-        return password;
+                String password = nestedMapValue(results, "entries", "password");
+                if (password == null)
+                    throw new SecDispatcherException("No KeepassXC entry for " + entryName);
+
+                return password;
+            }
+            catch (IOException | KeepassProxyAccessException e)
+            {
+                throw new SecDispatcherException("Error getting entry for " + entryName + ": " + e, e);
+            }
+        }
     }
 
     private static String nestedMapValue(Map<?, ?> map, String... path)
