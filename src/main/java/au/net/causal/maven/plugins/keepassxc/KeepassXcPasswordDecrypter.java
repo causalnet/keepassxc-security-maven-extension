@@ -20,7 +20,7 @@ import java.util.Map;
  * 
  * @author prunge
  */
-@Component(role= PasswordDecryptor.class, hint="keepassxc")
+//@Component(role= PasswordDecryptor.class, hint="keepassxc")
 public class KeepassXcPasswordDecrypter
 extends AbstractLogEnabled
 implements PasswordDecryptor
