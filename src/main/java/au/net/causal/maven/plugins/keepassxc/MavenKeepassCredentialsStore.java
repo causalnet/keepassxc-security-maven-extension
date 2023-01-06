@@ -2,10 +2,13 @@ package au.net.causal.maven.plugins.keepassxc;
 
 import com.google.common.base.StandardSystemProperty;
 import org.purejava.Credentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -13,6 +16,8 @@ import java.util.Objects;
 
 public class MavenKeepassCredentialsStore implements KeepassCredentialsStore
 {
+    private static final Logger log = LoggerFactory.getLogger(MavenKeepassCredentialsStore.class);
+
     private final Path storeFile;
 
     public MavenKeepassCredentialsStore()
@@ -49,9 +54,12 @@ public class MavenKeepassCredentialsStore implements KeepassCredentialsStore
         {
             return (Credentials)is.readObject();
         }
-        catch (ClassNotFoundException e)
+        catch (ObjectStreamException | ClassNotFoundException e)
         {
-            throw new IOException("Error deserializing KeepassXC credentials: " + e, e);
+            //If the file is corrupted (empty or bad data) log a warning and just re-pair with Keepass
+            log.error("Keepass Maven extension credentials file corrupted - will attempt recreation and repair with KeepassXC: " + e, e);
+            return null;
         }
+        //Normal IO exception will fail like normal - a more serious data reading issue
     }
 }

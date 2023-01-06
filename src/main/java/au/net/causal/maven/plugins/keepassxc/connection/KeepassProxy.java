@@ -25,6 +25,13 @@ public class KeepassProxy implements AutoCloseable
     private final KeepassCredentialsStore credentialsStore;
     private final CredentialsUpdater credentialsUpdater;
 
+    /**
+     * Creates the proxy.
+     *
+     * @param credentialsStore loads/stores Keepass {@linkplain Credentials} used for accessing Keepass.
+     *
+     * @throws IOException if an error occurs loading Keepass credentials from the store.
+     */
     public KeepassProxy(KeepassCredentialsStore credentialsStore)
     throws IOException
     {

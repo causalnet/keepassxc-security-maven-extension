@@ -2,7 +2,6 @@ package au.net.causal.maven.plugins.keepassxc;
 
 import au.net.causal.maven.plugins.keepassxc.connection.KeepassProxy;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
-import org.purejava.KeepassProxyAccess;
 import org.purejava.KeepassProxyAccessException;
 import org.sonatype.plexus.components.sec.dispatcher.PasswordDecryptor;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
@@ -35,7 +34,9 @@ implements PasswordDecryptor
         }
         catch (IOException e)
         {
-            throw new SecDispatcherException("Error initializing Keepass proxy: " + e, e);
+            SecDispatcherException ex = new SecDispatcherException("Error initializing Keepass proxy: " + e, e);
+            getLogger().error(ex.getMessage(), ex);
+            throw ex;
         }
 
         try
@@ -44,7 +45,9 @@ implements PasswordDecryptor
         }
         catch (IOException e)
         {
-            throw new SecDispatcherException("Failed to connect to keepass", e);
+            SecDispatcherException ex = new SecDispatcherException("Failed to connect to keepass", e);
+            getLogger().error(ex.getMessage(), ex);
+            throw ex;
         }
 
         boolean connected = kpa.connectionAvailable();
@@ -58,55 +61,6 @@ implements PasswordDecryptor
                 getLogger().info("Waiting for Keepass connection...");
                 Thread.sleep(1000L);
                 connected = kpa.connectionAvailable();
-            }
-        }
-        catch (InterruptedException e)
-        {
-            throw new SecDispatcherException("Interrupted while waiting for KeepassXC", e);
-        }
-
-        return kpa;
-    }
-
-    private KeepassProxyAccess connectKeepassOrig()
-    throws SecDispatcherException
-    {
-        var kpa = new KeepassProxyAccess();
-        boolean ok = kpa.connect();
-        if (!ok)
-            throw new RuntimeException("Failed to connect to keepass");
-
-        String associateId = kpa.getAssociateId();
-        String associateKey = kpa.getIdKeyPairPublicKey();
-
-        //System.out.println(associateId + "/" + associateKey);
-
-        boolean associated = kpa.testAssociate(associateId, associateKey);
-
-        if (!associated)
-        {
-            associated = kpa.associate();
-            //if (!associated)
-            //    throw new RuntimeException("Failed to associate");
-        }
-
-        //System.out.println(kpa);
-
-        associateId = kpa.getAssociateId();
-        associateKey = kpa.getIdKeyPairPublicKey();
-
-        //System.out.println("ID: " + associateId + ": " + associateKey);
-
-        try
-        {
-            while (!associated)
-            {
-                associateId = kpa.getAssociateId();
-                associateKey = kpa.getIdKeyPairPublicKey();
-
-                getLogger().info("Waiting for assoc " + associateId + "/" + associateKey);
-                associated = kpa.testAssociate(associateId, associateKey);
-                Thread.sleep(1000L);
             }
         }
         catch (InterruptedException e)
