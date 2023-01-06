@@ -232,18 +232,24 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <!--
                             <relocations>
                                 <relocation>
-                                    <pattern>org.purejava:keepassxc-proxy-access</pattern>
-                                    <shadedPattern>org.shaded.plexus.util</shadedPattern>
-                                    <excludes>
-                                        <exclude>org.codehaus.plexus.util.xml.Xpp3Dom</exclude>
-                                        <exclude>org.codehaus.plexus.util.xml.pull.*</exclude>
-                                    </excludes>
+                                    <pattern>org.keepassxc</pattern>
+                                    <shadedPattern>au.net.causal.maven.plugins.keepassxc.shaded.org.keepassxc</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.purejava</pattern>
+                                    <shadedPattern>au.net.causal.maven.plugins.keepassxc.shaded.org.purejava</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.json</pattern>
+                                    <shadedPattern>au.net.causal.maven.plugins.keepassxc.shaded.org.json</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.iwebpp.crypto</pattern>
+                                    <shadedPattern>au.net.causal.maven.plugins.keepassxc.shaded.com.iwebpp.crypto</shadedPattern>
                                 </relocation>
                             </relocations>
-                            -->
                         </configuration>
                     </execution>
                 </executions>
