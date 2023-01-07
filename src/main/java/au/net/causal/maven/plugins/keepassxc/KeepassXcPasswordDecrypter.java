@@ -1,12 +1,14 @@
 package au.net.causal.maven.plugins.keepassxc;
 
 import au.net.causal.maven.plugins.keepassxc.connection.KeepassProxy;
+import com.google.common.base.StandardSystemProperty;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
 import org.purejava.KeepassProxyAccessException;
 import org.sonatype.plexus.components.sec.dispatcher.PasswordDecryptor;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -19,18 +21,21 @@ import java.util.Map;
  * 
  * @author prunge
  */
-//@Component(role= PasswordDecryptor.class, hint="keepassxc")
 public class KeepassXcPasswordDecrypter
 extends AbstractLogEnabled
 implements PasswordDecryptor
 {
-    private KeepassProxy connectKeepassProxy()
+    protected static final String CONFIG_KEY_CREDENTIALS_STORE_FILE = "credentialsStoreFile";
+    private static final String DEFAULT_CREDENTIALS_STORE_FILE_NAME = "keepassxc-security-maven-extension-credentials";
+    private static final Path CREDENTIALS_STORE_BASE_DIRECTORY = Path.of(StandardSystemProperty.USER_HOME.value(), ".m2");
+
+    private KeepassProxy connectKeepassProxy(KeepassCredentialsStore credentialsStore)
     throws SecDispatcherException
     {
         KeepassProxy kpa;
         try
         {
-            kpa = new KeepassProxy(new MavenKeepassCredentialsStore());
+            kpa = new KeepassProxy(credentialsStore);
         }
         catch (IOException e)
         {
@@ -71,11 +76,29 @@ implements PasswordDecryptor
         return kpa;
     }
 
+    protected KeepassCredentialsStore createCredentialsStore(Map<?, ?> decrypterConfig)
+    {
+        Object credentialsStoreFileObj = decrypterConfig.get(CONFIG_KEY_CREDENTIALS_STORE_FILE);
+        String credentialsStoreFileName;
+        if (credentialsStoreFileObj == null)
+            credentialsStoreFileName = DEFAULT_CREDENTIALS_STORE_FILE_NAME;
+        else
+            credentialsStoreFileName = credentialsStoreFileObj.toString();
+
+        Path credentialsStoreFile = CREDENTIALS_STORE_BASE_DIRECTORY.resolve(credentialsStoreFileName);
+        return new MavenKeepassCredentialsStore(credentialsStoreFile);
+    }
+
     @Override
     public String decrypt(String str, Map attributes, Map config)
     throws SecDispatcherException
     {
-        try (var kpa = connectKeepassProxy())
+        if (config == null)
+            config = Map.of();
+
+        KeepassCredentialsStore credentialsStore = createCredentialsStore(config);
+
+        try (KeepassProxy kpa = connectKeepassProxy(credentialsStore))
         {
             String entryName = str;
             getLogger().info("Need to grab entry '" + entryName + "' from KeepassXC");

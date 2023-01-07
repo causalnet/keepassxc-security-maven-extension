@@ -1,6 +1,5 @@
 package au.net.causal.maven.plugins.keepassxc;
 
-import com.google.common.base.StandardSystemProperty;
 import org.purejava.Credentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +18,6 @@ public class MavenKeepassCredentialsStore implements KeepassCredentialsStore
     private static final Logger log = LoggerFactory.getLogger(MavenKeepassCredentialsStore.class);
 
     private final Path storeFile;
-
-    public MavenKeepassCredentialsStore()
-    {
-        this(Path.of(StandardSystemProperty.USER_HOME.value(), ".m2", "keepassxc-security-maven-extension-credentials"));
-    }
 
     public MavenKeepassCredentialsStore(Path storeFile)
     {
