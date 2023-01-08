@@ -18,6 +18,9 @@ public class KeepassExtensionSettings
 
     private Path credentialsStoreFile = Path.of("keepassxc-security-maven-extension-credentials");
     private Duration keepassUnlockMaxWaitTime = Duration.ofMinutes(2L);
+
+    //Default failure mode to empty_password since throwing an exception will make Maven deliver the settings password string uninterpreted, potentially exposing to a remote site
+    //a bit of information about the local user's setup
     private FailMode failMode = FailMode.EMPTY_PASSWORD;
 
     public void configure(Map<?, ?> config)
