@@ -13,11 +13,13 @@ public class KeepassExtensionSettings
     private static final Logger log = LoggerFactory.getLogger(KeepassExtensionSettings.class);
 
     private static final String CONFIG_KEY_CREDENTIALS_STORE_FILE = "credentialsStoreFile";
-    private static final String CONFIG_KEY_KEEPASS_UNLOCK_MAX_WAIT_TIME = "keepassUnlockMaxWaitTime";
+    private static final String CONFIG_KEY_UNLOCK_MAX_WAIT_TIME = "unlockMaxWaitTime";
+    private static final String CONFIG_KEY_UNLOCK_MESSAGE_REPEAT_TIME = "unlockMessageRepeatTime";
     private static final String CONFIG_KEY_FAIL_MODE = "failMode";
 
     private Path credentialsStoreFile = Path.of("keepassxc-security-maven-extension-credentials");
-    private Duration keepassUnlockMaxWaitTime = Duration.ofMinutes(2L);
+    private Duration unlockMaxWaitTime = Duration.ofMinutes(2L);
+    private Duration unlockMessageRepeatTime = Duration.ofSeconds(5L);
 
     //Default failure mode to empty_password since throwing an exception will make Maven deliver the settings password string uninterpreted, potentially exposing to a remote site
     //a bit of information about the local user's setup
@@ -29,9 +31,13 @@ public class KeepassExtensionSettings
         if (credentialsStoreFile != null)
             setCredentialsStoreFile(credentialsStoreFile);
 
-        Duration keepassUnlockMaxWaitTime = durationFromMapKey(config, CONFIG_KEY_KEEPASS_UNLOCK_MAX_WAIT_TIME);
-        if (keepassUnlockMaxWaitTime != null)
-            setKeepassUnlockMaxWaitTime(keepassUnlockMaxWaitTime);
+        Duration unlockMaxWaitTime = durationFromMapKey(config, CONFIG_KEY_UNLOCK_MAX_WAIT_TIME);
+        if (unlockMaxWaitTime != null)
+            setUnlockMaxWaitTime(unlockMaxWaitTime);
+
+        Duration unlockMessageRepeatTime = durationFromMapKey(config, CONFIG_KEY_UNLOCK_MESSAGE_REPEAT_TIME);
+        if (unlockMessageRepeatTime != null)
+            setUnlockMessageRepeatTime(unlockMessageRepeatTime);
 
         FailMode failMode = enumFromMapKey(config, CONFIG_KEY_FAIL_MODE, FailMode.class);
         if (failMode != null)
@@ -105,14 +111,24 @@ public class KeepassExtensionSettings
         this.credentialsStoreFile = credentialsStoreFile;
     }
 
-    public Duration getKeepassUnlockMaxWaitTime()
+    public Duration getUnlockMaxWaitTime()
     {
-        return keepassUnlockMaxWaitTime;
+        return unlockMaxWaitTime;
     }
 
-    public void setKeepassUnlockMaxWaitTime(Duration keepassUnlockMaxWaitTime)
+    public void setUnlockMaxWaitTime(Duration unlockMaxWaitTime)
     {
-        this.keepassUnlockMaxWaitTime = keepassUnlockMaxWaitTime;
+        this.unlockMaxWaitTime = unlockMaxWaitTime;
+    }
+
+    public Duration getUnlockMessageRepeatTime()
+    {
+        return unlockMessageRepeatTime;
+    }
+
+    public void setUnlockMessageRepeatTime(Duration unlockMessageRepeatTime)
+    {
+        this.unlockMessageRepeatTime = unlockMessageRepeatTime;
     }
 
     public FailMode getFailMode()

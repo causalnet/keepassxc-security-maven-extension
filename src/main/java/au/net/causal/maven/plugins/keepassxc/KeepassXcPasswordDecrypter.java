@@ -69,17 +69,24 @@ implements PasswordDecryptor
             connected = kpa.connectionAvailable();
 
             Instant connectionStartTime = Instant.now(clock);
-            Instant connectionMaxTime = connectionStartTime.plus(settings.getKeepassUnlockMaxWaitTime());
+            Instant connectionMaxTime = connectionStartTime.plus(settings.getUnlockMaxWaitTime());
+            Instant lastMessageTime = Instant.EPOCH;
             while (!connected && Instant.now(clock).isBefore(connectionMaxTime))
             {
-                Duration remainingTime = Duration.between(Instant.now(clock), connectionMaxTime).truncatedTo(ChronoUnit.SECONDS); //truncate to seconds for a nicer message
-                getLogger().info("Waiting for Keepass connection (timeout in " + remainingTime + ")...");
-                Thread.sleep(1000L);
+                Instant now = Instant.now(clock);
+                Duration remainingTime = Duration.between(now, connectionMaxTime).truncatedTo(ChronoUnit.SECONDS); //truncate to seconds for a nicer message
+                if (lastMessageTime.plus(settings.getUnlockMessageRepeatTime()).isBefore(now))
+                {
+                    getLogger().info("Waiting for Keepass connection (timeout in " + remainingTime + ")...");
+                    lastMessageTime = now;
+                }
+
+                Thread.sleep(500L);
                 connected = kpa.connectionAvailable();
             }
 
             if (!connected)
-                throw new SecDispatcherException("Failed to connect to Keepass within " + settings.getKeepassUnlockMaxWaitTime());
+                throw new SecDispatcherException("Failed to connect to Keepass within " + settings.getUnlockMaxWaitTime());
         }
         catch (InterruptedException e)
         {
