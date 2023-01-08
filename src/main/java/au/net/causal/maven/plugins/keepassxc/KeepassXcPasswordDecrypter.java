@@ -79,10 +79,7 @@ implements PasswordDecryptor
             }
 
             if (!connected)
-            {
-                getLogger().error("Failed to connect to Keepass within " + settings.getKeepassUnlockMaxWaitTime());
                 throw new SecDispatcherException("Failed to connect to Keepass within " + settings.getKeepassUnlockMaxWaitTime());
-            }
         }
         catch (InterruptedException e)
         {
@@ -133,6 +130,16 @@ implements PasswordDecryptor
             {
                 throw new SecDispatcherException("Error getting entry for " + entryName + ": " + e, e);
             }
+        }
+        catch (SecDispatcherException e)
+        {
+            //Only throw ugly stack trace if user has debug mode enabled
+            if (getLogger().isDebugEnabled())
+                getLogger().error(e.getMessage(), e);
+            else
+                getLogger().error(e.getMessage());
+
+            return settings.getFailMode().handleKeepassFailure(e);
         }
     }
 

@@ -14,9 +14,11 @@ public class KeepassExtensionSettings
 
     private static final String CONFIG_KEY_CREDENTIALS_STORE_FILE = "credentialsStoreFile";
     private static final String CONFIG_KEY_KEEPASS_UNLOCK_MAX_WAIT_TIME = "keepassUnlockMaxWaitTime";
+    private static final String CONFIG_KEY_FAIL_MODE = "failMode";
 
     private Path credentialsStoreFile = Path.of("keepassxc-security-maven-extension-credentials");
     private Duration keepassUnlockMaxWaitTime = Duration.ofMinutes(2L);
+    private FailMode failMode = FailMode.EMPTY_PASSWORD;
 
     public void configure(Map<?, ?> config)
     {
@@ -27,6 +29,10 @@ public class KeepassExtensionSettings
         Duration keepassUnlockMaxWaitTime = durationFromMapKey(config, CONFIG_KEY_KEEPASS_UNLOCK_MAX_WAIT_TIME);
         if (keepassUnlockMaxWaitTime != null)
             setKeepassUnlockMaxWaitTime(keepassUnlockMaxWaitTime);
+
+        FailMode failMode = enumFromMapKey(config, CONFIG_KEY_FAIL_MODE, FailMode.class);
+        if (failMode != null)
+            setFailMode(failMode);
     }
 
     private static String stringFromMapKey(Map<?, ?> map, String key)
@@ -60,10 +66,30 @@ public class KeepassExtensionSettings
             }
             catch (DateTimeParseException e)
             {
-                log.warn("Error parsing Keepass extension configuration option '" + key + "': " + e, e);
+                log.error("Error parsing Keepass extension configuration option '" + key + "' (" + sValue + "): " + e, e);
                 return null;
             }
         }
+    }
+
+    private static <E extends Enum<E>> E enumFromMapKey(Map<?, ?> map, String key, Class<E> enumType)
+    {
+        String sValue = stringFromMapKey(map, key);
+        if (sValue == null)
+            return null;
+        else
+        {
+            try
+            {
+                return Enum.valueOf(enumType, sValue);
+            }
+            catch (IllegalArgumentException e)
+            {
+                log.error("Error parsing Keepass extension configuration option '" + key + "' (" + sValue + "): " + e, e);
+                return null;
+            }
+        }
+
     }
 
     public Path getCredentialsStoreFile()
@@ -84,5 +110,15 @@ public class KeepassExtensionSettings
     public void setKeepassUnlockMaxWaitTime(Duration keepassUnlockMaxWaitTime)
     {
         this.keepassUnlockMaxWaitTime = keepassUnlockMaxWaitTime;
+    }
+
+    public FailMode getFailMode()
+    {
+        return failMode;
+    }
+
+    public void setFailMode(FailMode failMode)
+    {
+        this.failMode = failMode;
     }
 }
