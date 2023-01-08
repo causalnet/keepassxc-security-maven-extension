@@ -9,6 +9,10 @@ import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -25,11 +29,11 @@ public class KeepassXcPasswordDecrypter
 extends AbstractLogEnabled
 implements PasswordDecryptor
 {
-    protected static final String CONFIG_KEY_CREDENTIALS_STORE_FILE = "credentialsStoreFile";
-    private static final String DEFAULT_CREDENTIALS_STORE_FILE_NAME = "keepassxc-security-maven-extension-credentials";
     private static final Path CREDENTIALS_STORE_BASE_DIRECTORY = Path.of(StandardSystemProperty.USER_HOME.value(), ".m2");
 
-    private KeepassProxy connectKeepassProxy(KeepassCredentialsStore credentialsStore)
+    private final Clock clock = Clock.systemUTC();
+
+    private KeepassProxy connectKeepassProxy(KeepassCredentialsStore credentialsStore, KeepassExtensionSettings settings)
     throws SecDispatcherException
     {
         KeepassProxy kpa;
@@ -61,11 +65,23 @@ implements PasswordDecryptor
 
         try
         {
-            while (!connected)
+            //Always do first attempt - at the moment associate() always returns false to work around a bug in KeepassXC
+            connected = kpa.connectionAvailable();
+
+            Instant connectionStartTime = Instant.now(clock);
+            Instant connectionMaxTime = connectionStartTime.plus(settings.getKeepassUnlockMaxWaitTime());
+            while (!connected && Instant.now(clock).isBefore(connectionMaxTime))
             {
-                getLogger().info("Waiting for Keepass connection...");
+                Duration remainingTime = Duration.between(Instant.now(clock), connectionMaxTime).truncatedTo(ChronoUnit.SECONDS); //truncate to seconds for a nicer message
+                getLogger().info("Waiting for Keepass connection (timeout in " + remainingTime + ")...");
                 Thread.sleep(1000L);
                 connected = kpa.connectionAvailable();
+            }
+
+            if (!connected)
+            {
+                getLogger().error("Failed to connect to Keepass within " + settings.getKeepassUnlockMaxWaitTime());
+                throw new SecDispatcherException("Failed to connect to Keepass within " + settings.getKeepassUnlockMaxWaitTime());
             }
         }
         catch (InterruptedException e)
@@ -76,16 +92,11 @@ implements PasswordDecryptor
         return kpa;
     }
 
-    protected KeepassCredentialsStore createCredentialsStore(Map<?, ?> decrypterConfig)
+    protected KeepassCredentialsStore createCredentialsStore(KeepassExtensionSettings settings)
     {
-        Object credentialsStoreFileObj = decrypterConfig.get(CONFIG_KEY_CREDENTIALS_STORE_FILE);
-        String credentialsStoreFileName;
-        if (credentialsStoreFileObj == null)
-            credentialsStoreFileName = DEFAULT_CREDENTIALS_STORE_FILE_NAME;
-        else
-            credentialsStoreFileName = credentialsStoreFileObj.toString();
+        //May be absolute, but if relative resolve from the .m2 directory
+        Path credentialsStoreFile = CREDENTIALS_STORE_BASE_DIRECTORY.resolve(settings.getCredentialsStoreFile());
 
-        Path credentialsStoreFile = CREDENTIALS_STORE_BASE_DIRECTORY.resolve(credentialsStoreFileName);
         return new MavenKeepassCredentialsStore(credentialsStoreFile);
     }
 
@@ -96,9 +107,12 @@ implements PasswordDecryptor
         if (config == null)
             config = Map.of();
 
-        KeepassCredentialsStore credentialsStore = createCredentialsStore(config);
+        KeepassExtensionSettings settings = new KeepassExtensionSettings();
+        settings.configure(config);
 
-        try (KeepassProxy kpa = connectKeepassProxy(credentialsStore))
+        KeepassCredentialsStore credentialsStore = createCredentialsStore(settings);
+
+        try (KeepassProxy kpa = connectKeepassProxy(credentialsStore, settings))
         {
             String entryName = str;
             getLogger().info("Need to grab entry '" + entryName + "' from KeepassXC");
