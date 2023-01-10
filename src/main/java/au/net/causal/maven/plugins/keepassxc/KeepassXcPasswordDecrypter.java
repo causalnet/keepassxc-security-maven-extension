@@ -201,8 +201,34 @@ implements PasswordDecryptor
     protected String selectEntryValue(KeepassEntry entry, Map<?, ?> decrypterEntryAttributes)
     throws SecDispatcherException
     {
-        //TODO actual selection
-        return entry.getPassword();
+        String select = stringValue(decrypterEntryAttributes.get("select"));
+
+        //The values for 'select' should be similar or equal to the ones in KeepassXC UI to make it least confusing for users
+        if (select == null || "password".equals(select))
+            return entry.getPassword();
+        else if ("username".equals(select))
+            return entry.getLogin();
+        else if ("title".equals(select))
+            return entry.getName();
+        else //Custom attribute
+        {
+            String customFieldValue = stringValue(entry.getStringFields().get(select));
+
+            //Try with 'KPH: ' prefix - Keepass wants custom fields that come through the browser helper to be prefixed by this anyway
+            //but we don't want to burden the Maven users with having to specify this on every custom attribute
+            if (customFieldValue == null)
+                customFieldValue = stringValue(entry.getStringFields().get("KPH: " + select));
+
+            return customFieldValue;
+        }
+    }
+
+    private static String stringValue(Object raw)
+    {
+        if (raw == null)
+            return null;
+        else
+            return raw.toString();
     }
 
     /**
@@ -259,14 +285,6 @@ implements PasswordDecryptor
             }
 
             return new KeepassEntry(name, login, password, group, stringFields);
-        }
-
-        private static String stringValue(Object raw)
-        {
-            if (raw == null)
-                return null;
-            else
-                return raw.toString();
         }
 
         public String getName()
