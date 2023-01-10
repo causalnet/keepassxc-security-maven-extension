@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * To use this decrypter when it is registered, use something like the following in <code>settings.xml</code> for encrypted passwords:
@@ -183,8 +184,34 @@ implements PasswordDecryptor
         if (entries.isEmpty())
             return null;
 
-        //TODO actual filtering
-        return entries.iterator().next();
+        List<? extends EntryFilter> filters = filtersFromDecrypterEntryAttributes(decrypterEntryAttributes);
+
+        return entries.stream().filter(entry ->
+        {
+            for (EntryFilter filter : filters)
+            {
+                String entryValue = selectEntryValue(entry, filter.getKey());
+                if (!Objects.equals(entryValue, filter.getValue()))
+                    return false;
+            }
+
+            return true;
+        }).findFirst().orElse(null);
+    }
+
+    private List<? extends EntryFilter> filtersFromDecrypterEntryAttributes(Map<?, ?> decrypterEntryAttributes)
+    {
+        List<EntryFilter> filters = new ArrayList<>();
+        for (Map.Entry<?, ?> attributeEntry : decrypterEntryAttributes.entrySet())
+        {
+            if (attributeEntry.getKey() instanceof String && attributeEntry.getValue() != null)
+            {
+                String attributeKey = (String)attributeEntry.getKey();
+                if (attributeKey.startsWith("where:"))
+                    filters.add(new EntryFilter(attributeKey.substring("where:".length()), attributeEntry.getValue().toString()));
+            }
+        }
+        return filters;
     }
 
     /**
@@ -202,22 +229,35 @@ implements PasswordDecryptor
     throws SecDispatcherException
     {
         String select = stringValue(decrypterEntryAttributes.get("select"));
+        return selectEntryValue(entry, select);
+    }
 
+    /**
+     * From an entry, determine the string value to return from it based on a select string.  Allows selection of different values, such as login, password or
+     * custom attributes.
+     *
+     * @param entry the Keepass entry.
+     * @param selectAttribute the 'select' attribute used for selecting a field.
+     *
+     * @return the value to use, or null if there was none on this entry.
+     */
+    private String selectEntryValue(KeepassEntry entry, String selectAttribute)
+    {
         //The values for 'select' should be similar or equal to the ones in KeepassXC UI to make it least confusing for users
-        if (select == null || "password".equals(select))
+        if (selectAttribute == null || "password".equals(selectAttribute))
             return entry.getPassword();
-        else if ("username".equals(select))
+        else if ("username".equals(selectAttribute))
             return entry.getLogin();
-        else if ("title".equals(select))
+        else if ("title".equals(selectAttribute))
             return entry.getName();
         else //Custom attribute
         {
-            String customFieldValue = stringValue(entry.getStringFields().get(select));
+            String customFieldValue = stringValue(entry.getStringFields().get(selectAttribute));
 
             //Try with 'KPH: ' prefix - Keepass wants custom fields that come through the browser helper to be prefixed by this anyway
             //but we don't want to burden the Maven users with having to specify this on every custom attribute
             if (customFieldValue == null)
-                customFieldValue = stringValue(entry.getStringFields().get("KPH: " + select));
+                customFieldValue = stringValue(entry.getStringFields().get("KPH: " + selectAttribute));
 
             return customFieldValue;
         }
@@ -310,6 +350,34 @@ implements PasswordDecryptor
         public Map<String, ?> getStringFields()
         {
             return stringFields;
+        }
+    }
+
+    private static class EntryFilter
+    {
+        private final String key;
+        private final String value;
+
+        public EntryFilter(String key, String value)
+        {
+            this.key = key;
+            this.value = value;
+        }
+
+        public String getKey()
+        {
+            return key;
+        }
+
+        public String getValue()
+        {
+            return value;
+        }
+
+        @Override
+        public String toString()
+        {
+            return getKey() + "=" + getValue();
         }
     }
 }
