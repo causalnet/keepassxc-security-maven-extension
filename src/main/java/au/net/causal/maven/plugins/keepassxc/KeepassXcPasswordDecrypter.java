@@ -123,6 +123,7 @@ implements PasswordDecryptor
 
             try
             {
+                //TODO maven:// protocol seems restrictive
                 Map<String, ?> results = kpa.getLogins("maven://" + entryName, null, true, List.of(kpa.exportConnection()));
                 if (results == null)
                     throw new SecDispatcherException("No KeepassXC entry for " + entryName);
@@ -139,15 +140,15 @@ implements PasswordDecryptor
                         entries.add(KeepassEntry.parse((Map<?, ?>)rawEntry));
                 }
 
-                if (entries.isEmpty())
+                KeepassEntry entry = selectEntry(entries, attributes);
+                if (entry == null)
                     throw new SecDispatcherException("No KeepassXC entry for " + entryName);
 
-                KeepassEntry entry = entries.get(0);
-                String password = entry.getPassword();
-                if (password == null)
-                    throw new SecDispatcherException("No KeepassXC entry for " + entryName);
+                String value = selectEntryValue(entry, attributes);
+                if (value == null)
+                    throw new SecDispatcherException("No KeepassXC entry value for " + entryName);
 
-                return password;
+                return value;
             }
             catch (IOException | KeepassProxyAccessException e)
             {
@@ -164,6 +165,44 @@ implements PasswordDecryptor
 
             return settings.getFailMode().handleKeepassFailure(e);
         }
+    }
+
+    /**
+     * Given a number of matching entries from Keepass, select one of them based on any selection criteria in the decrypter entry attributes.
+     *
+     * @param entries entries that Keepass returned.
+     * @param decrypterEntryAttributes attributes from the decrypter entry in settings.xml.
+     *
+     * @return the selected entry, or null if nothing matched.
+     *
+     * @throws SecDispatcherException if an error occurs.
+     */
+    protected KeepassEntry selectEntry(Collection<? extends KeepassEntry> entries, Map<?, ?> decrypterEntryAttributes)
+    throws SecDispatcherException
+    {
+        if (entries.isEmpty())
+            return null;
+
+        //TODO actual filtering
+        return entries.iterator().next();
+    }
+
+    /**
+     * From an entry, determine the string value to return from it based on decrypter entry attributes.  Allows selection of different values, such as login, password or
+     * custom attributes.
+     *
+     * @param entry the Keepass entry.
+     * @param decrypterEntryAttributes attributes from the decrypter entry in settings.xml.
+     *
+     * @return the value to use, or null if there was none on this entry.
+     *
+     * @throws SecDispatcherException if an error occurs.
+     */
+    protected String selectEntryValue(KeepassEntry entry, Map<?, ?> decrypterEntryAttributes)
+    throws SecDispatcherException
+    {
+        //TODO actual selection
+        return entry.getPassword();
     }
 
     /**
