@@ -13,6 +13,12 @@
     	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>    	
         <maven.version>3.8.6</maven.version>
         <java.version>17</java.version>
+
+        <!--
+        Set this to true locally to create non-shaded artifact which can be useful for debugging, but unshaded this extension will only
+        work from extensions.xml and not from lib/ext/with MAVEN_OPTS.
+        -->
+        <skipShade>false</skipShade>
     </properties>
 
 	<developers>
@@ -232,6 +238,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <skip>${skipShade}</skip>
                             <relocations>
                                 <relocation>
                                     <pattern>org.keepassxc</pattern>
