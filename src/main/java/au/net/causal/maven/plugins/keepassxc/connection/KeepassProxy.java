@@ -124,10 +124,11 @@ public class KeepassProxy implements AutoCloseable
                       "key", connection.getIdKeyPairPublicKey());
     }
 
-    public Map<String, Object> getLogins(String url, String submitUrl, boolean httpAuth, List<Map<String, String>> list)
+    public Map<String, ?> getLogins(String url, String submitUrl, boolean httpAuth, List<Map<String, String>> list)
     throws IOException, KeepassProxyAccessException
     {
-        return connection.getLogins(url, submitUrl, httpAuth, list).toMap();
+        var result = connection.getLogins(url, submitUrl, httpAuth, list);
+        return result.toMap();
     }
 
     private class CredentialsUpdater implements PropertyChangeListener

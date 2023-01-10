@@ -13,7 +13,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,8 +24,6 @@ import java.util.Map;
  * <p>
  * 
  * <code>{[type=keepassxc]entryName}</code>
- * 
- * @author prunge
  */
 public class KeepassXcPasswordDecrypter
 extends AbstractLogEnabled
@@ -123,11 +123,27 @@ implements PasswordDecryptor
 
             try
             {
-                var results = kpa.getLogins("maven://" + entryName, null, true, List.of(kpa.exportConnection()));
+                Map<String, ?> results = kpa.getLogins("maven://" + entryName, null, true, List.of(kpa.exportConnection()));
                 if (results == null)
                     throw new SecDispatcherException("No KeepassXC entry for " + entryName);
 
-                String password = nestedMapValue(results, "entries", "password");
+                Object entriesObj = results.get("entries");
+                if (!(entriesObj instanceof Collection<?>))
+                    throw new SecDispatcherException("No entries value for " + entryName);
+
+                Collection<?> rawEntries = (Collection<?>)entriesObj;
+                List<KeepassEntry> entries = new ArrayList<>(rawEntries.size());
+                for (Object rawEntry : rawEntries)
+                {
+                    if (rawEntry instanceof Map<?, ?>)
+                        entries.add(KeepassEntry.parse((Map<?, ?>)rawEntry));
+                }
+
+                if (entries.isEmpty())
+                    throw new SecDispatcherException("No KeepassXC entry for " + entryName);
+
+                KeepassEntry entry = entries.get(0);
+                String password = entry.getPassword();
                 if (password == null)
                     throw new SecDispatcherException("No KeepassXC entry for " + entryName);
 
@@ -150,31 +166,93 @@ implements PasswordDecryptor
         }
     }
 
-    private static String nestedMapValue(Map<?, ?> map, String... path)
+    /**
+     * See:
+     * <ul>
+     *     <li><a href="https://github.com/keepassxreboot/keepassxc-browser/blob/develop/keepassxc-protocol.md#get-logins">KeepassXC protocol documentation</a></li>
+     *     <li><a href="https://github.com/keepassxreboot/keepassxc/blob/2.7.4/src/browser/BrowserAction.cpp#L234">BrowserAction::handleGetLogins</a></li>
+     *     <li><a href="https://github.com/keepassxreboot/keepassxc/blob/2.7.4/src/browser/BrowserService.cpp#L920">BrowserService::prepareEntry</a></li>
+     * </ul>
+     *
+     *
+     */
+    private static class KeepassEntry
     {
-        return nestedMapValue(map, List.of(path));
-    }
+        private final String name;
+        private final String login;
+        private final String password;
+        private final String group;
+        private final Map<String, String> stringFields;
 
-    private static String nestedMapValue(Map<?, ?> map, List<String> path)
-    {
-        String key = path.get(0);
-        Object value = map.get(key);
-        if (value == null)
-            return null;
-
-        //Unwrap collections - just use first element
-        if (value instanceof Collection<?>)
+        public KeepassEntry(String name, String login, String password, String group, Map<String, String> stringFields)
         {
-            Collection<?> cValue = (Collection<?>)value;
-            if (!cValue.isEmpty())
-                value = cValue.iterator().next();
+            this.name = name;
+            this.login = login;
+            this.password = password;
+            this.group = group;
+            this.stringFields = Map.copyOf(stringFields);
         }
 
-        if (path.size() == 1) //Last key
-            return value.toString();
-        else if (value instanceof Map<?, ?>)
-            return nestedMapValue((Map<?, ?>)value, path.subList(1, path.size()));
-        else
-            return null;
+        public static KeepassEntry parse(Map<?, ?> json)
+        {
+            String name = stringValue(json.get("name"));
+            String login = stringValue(json.get("login"));
+            String password = stringValue(json.get("password"));
+            String group = stringValue(json.get("group"));
+
+            Object rawStringFields = json.get("stringFields");
+            Map<String, String> stringFields = new LinkedHashMap<>();
+            if (rawStringFields instanceof Collection<?>)
+            {
+                Collection<?> stringFieldsList = (Collection<?>)rawStringFields;
+                for (Object rawStringFieldEntry : stringFieldsList)
+                {
+                    if (rawStringFieldEntry instanceof Map<?, ?>)
+                    {
+                        Map<?, ?> stringFieldEntry = (Map<?, ?>)rawStringFieldEntry;
+                        for (Map.Entry<?, ?> e : stringFieldEntry.entrySet())
+                        {
+                            if (e.getKey() != null && e.getValue() != null)
+                                stringFields.put(e.getKey().toString(), e.getValue().toString());
+                        }
+                    }
+                }
+            }
+
+            return new KeepassEntry(name, login, password, group, stringFields);
+        }
+
+        private static String stringValue(Object raw)
+        {
+            if (raw == null)
+                return null;
+            else
+                return raw.toString();
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public String getLogin()
+        {
+            return login;
+        }
+
+        public String getPassword()
+        {
+            return password;
+        }
+
+        public String getGroup()
+        {
+            return group;
+        }
+
+        public Map<String, ?> getStringFields()
+        {
+            return stringFields;
+        }
     }
 }
