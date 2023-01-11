@@ -263,4 +263,77 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>keepass-its</id>
+            <properties>
+                <!-- Recent enough so that it can run with all the way up to JDK 19 -->
+                <invoker.groovy.version>3.0.13</invoker.groovy.version>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-invoker-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <configuration>
+                            <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                            <settingsFile>src/it/settings.xml</settingsFile>
+                            <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+                            <postBuildHookScript>verify</postBuildHookScript>
+                            <pomIncludes>
+                                <pomInclude>*</pomInclude>
+                            </pomIncludes>
+                            <goals>
+                                <goal>clean</goal>
+                                <goal>verify</goal>
+                            </goals>
+                            <skipInvocation>${skipITs}</skipInvocation>
+                            <properties>
+                                <user.home>${project.build.directory}/it/userhome</user.home>
+                            </properties>
+                            <scriptVariables>
+                                <pluginGroupId>${project.groupId}</pluginGroupId>
+                                <pluginArtifactId>${project.artifactId}</pluginArtifactId>
+                                <pluginVersion>${project.version}</pluginVersion>
+                                <userHome>${project.build.directory}/it/userhome</userHome>
+                            </scriptVariables>
+                        </configuration>
+                        <dependencies>
+                            <!-- Override with our own Groovy version for compatibility with more modern JDKs -->
+                            <dependency>
+                                <groupId>org.codehaus.groovy</groupId>
+                                <artifactId>groovy</artifactId>
+                                <version>${invoker.groovy.version}</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.codehaus.groovy</groupId>
+                                <artifactId>groovy-json</artifactId>
+                                <version>${invoker.groovy.version}</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.codehaus.groovy</groupId>
+                                <artifactId>groovy-xml</artifactId>
+                                <version>${invoker.groovy.version}</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>integration-test</id>
+                                <goals>
+                                    <goal>install</goal>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
