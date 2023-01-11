@@ -6,8 +6,8 @@
     <servers>
         <server>
             <id>kdemo</id>
-            <username>myuser</username>
-            <password>{[type=keepassxc]scv}</password>
+            <username>me</username>
+            <password>{[type=keepassxc]https://aserver.test.test.test}</password>
         </server>
     </servers>
 
