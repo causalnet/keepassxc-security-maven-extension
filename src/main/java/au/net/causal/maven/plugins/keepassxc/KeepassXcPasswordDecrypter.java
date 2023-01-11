@@ -120,12 +120,11 @@ implements PasswordDecryptor
         try (KeepassProxy kpa = connectKeepassProxy(credentialsStore, settings))
         {
             String entryName = str;
-            getLogger().info("Need to grab entry '" + entryName + "' from KeepassXC");
+            getLogger().debug("Need to read entry '" + entryName + "' from KeepassXC");
 
             try
             {
-                //TODO maven:// protocol seems restrictive
-                Map<String, ?> results = kpa.getLogins("maven://" + entryName, null, true, List.of(kpa.exportConnection()));
+                Map<String, ?> results = kpa.getLogins(entryName, null, true, List.of(kpa.exportConnection()));
                 if (results == null)
                     throw new SecDispatcherException("No KeepassXC entry for " + entryName);
 
