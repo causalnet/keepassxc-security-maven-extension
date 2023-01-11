@@ -44,7 +44,6 @@
         </dependencies>
     </dependencyManagement>
 
-
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -276,6 +275,32 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>copy-resources</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/it-userhome/.m2</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/itdata</directory>
+                                            <includes>
+                                                <include>keepassxc-security-maven-extension-credentials</include>
+                                            </includes>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-invoker-plugin</artifactId>
                         <version>3.3.0</version>
                         <configuration>
@@ -292,7 +317,7 @@
                             </goals>
                             <skipInvocation>${skipITs}</skipInvocation>
                             <properties>
-                                <user.home>${project.build.directory}/it/userhome</user.home>
+                                <user.home>${project.build.directory}/it-userhome</user.home>
                                 <!-- Need a settings-security.xml to use Maven security extensions, even if that file has no useful content -->
                                 <settings.security>${project.basedir}/src/itdata/settings-security.xml</settings.security>
                             </properties>
@@ -300,7 +325,7 @@
                                 <pluginGroupId>${project.groupId}</pluginGroupId>
                                 <pluginArtifactId>${project.artifactId}</pluginArtifactId>
                                 <pluginVersion>${project.version}</pluginVersion>
-                                <userHome>${project.build.directory}/it/userhome</userHome>
+                                <userHome>${project.build.directory}/it-userhome</userHome>
                             </scriptVariables>
                         </configuration>
                         <dependencies>
