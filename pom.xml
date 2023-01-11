@@ -280,7 +280,7 @@
                         <version>3.3.0</version>
                         <configuration>
                             <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-                            <settingsFile>src/it/settings.xml</settingsFile>
+                            <settingsFile>src/itdata/settings.xml</settingsFile>
                             <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
                             <postBuildHookScript>verify</postBuildHookScript>
                             <pomIncludes>
@@ -293,6 +293,8 @@
                             <skipInvocation>${skipITs}</skipInvocation>
                             <properties>
                                 <user.home>${project.build.directory}/it/userhome</user.home>
+                                <!-- Need a settings-security.xml to use Maven security extensions, even if that file has no useful content -->
+                                <settings.security>${project.basedir}/src/itdata/settings-security.xml</settings.security>
                             </properties>
                             <scriptVariables>
                                 <pluginGroupId>${project.groupId}</pluginGroupId>
