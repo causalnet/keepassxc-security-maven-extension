@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
 import org.codehaus.plexus.logging.LogEnabled;
 import org.codehaus.plexus.logging.Logger;
+import org.codehaus.plexus.personality.plexus.lifecycle.phase.Disposable;
 import org.sonatype.plexus.components.sec.dispatcher.PasswordDecryptor;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class CachingPasswordDecrypter
 extends AbstractLogEnabled
-implements PasswordDecryptor
+implements PasswordDecryptor, Disposable
 {
     private final PasswordDecryptor passwordDecryptor;
     private final LoadingCache<DecryptKey, String> passwordCache;
@@ -71,6 +72,13 @@ implements PasswordDecryptor
             else
                 throw new UncheckedExecutionException(e);
         }
+    }
+
+    @Override
+    public void dispose()
+    {
+        if (passwordDecryptor instanceof Disposable)
+            ((Disposable)passwordDecryptor).dispose();
     }
 
     protected static class DecryptKey

@@ -2,7 +2,11 @@ package au.net.causal.maven.plugins.keepassxc;
 
 import au.net.causal.maven.plugins.keepassxc.connection.KeepassProxy;
 import com.google.common.base.StandardSystemProperty;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
+import org.codehaus.plexus.personality.plexus.lifecycle.phase.Disposable;
 import org.purejava.KeepassProxyAccessException;
 import org.sonatype.plexus.components.sec.dispatcher.PasswordDecryptor;
 import org.sonatype.plexus.components.sec.dispatcher.SecDispatcherException;
@@ -19,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 /**
  * To use this decrypter when it is registered, use something like the following in <code>settings.xml</code> for encrypted passwords:
@@ -28,11 +33,45 @@ import java.util.Objects;
  */
 public class KeepassXcPasswordDecrypter
 extends AbstractLogEnabled
-implements PasswordDecryptor
+implements PasswordDecryptor, Disposable
 {
     private static final Path CREDENTIALS_STORE_BASE_DIRECTORY = Path.of(StandardSystemProperty.USER_HOME.value(), ".m2");
 
     private final Clock clock = Clock.systemUTC();
+
+    private final LoadingCache<Map<?, ?>, KeepassProxy> proxyCacheByConfig;
+
+    public KeepassXcPasswordDecrypter()
+    {
+        proxyCacheByConfig =
+                CacheBuilder.newBuilder()
+                    .<Map<?, ?>, KeepassProxy>removalListener(notification -> notification.getValue().close())
+                    .build(new CacheLoader<>()
+                    {
+                        @Override
+                        public KeepassProxy load(Map<?, ?> config)
+                        throws Exception
+                        {
+                            return connectKeepassProxy(config);
+                        }
+                    });
+    }
+
+    private KeepassProxy connectKeepassProxy(Map<?, ?> config)
+    throws SecDispatcherException
+    {
+        if (config == null)
+            config = Map.of();
+        else
+            config = Map.copyOf(config);
+
+        KeepassExtensionSettings settings = new KeepassExtensionSettings();
+        settings.configure(config);
+
+        KeepassCredentialsStore credentialsStore = createCredentialsStore(settings);
+
+        return connectKeepassProxy(credentialsStore, settings);
+    }
 
     private KeepassProxy connectKeepassProxy(KeepassCredentialsStore credentialsStore, KeepassExtensionSettings settings)
     throws SecDispatcherException
@@ -111,14 +150,31 @@ implements PasswordDecryptor
     {
         if (config == null)
             config = Map.of();
+        else
+            config = Map.copyOf(config);
 
         KeepassExtensionSettings settings = new KeepassExtensionSettings();
         settings.configure(config);
 
-        KeepassCredentialsStore credentialsStore = createCredentialsStore(settings);
-
-        try (KeepassProxy kpa = connectKeepassProxy(credentialsStore, settings))
+        try
         {
+            KeepassProxy kpa;
+            try
+            {
+                kpa = proxyCacheByConfig.get(config);
+            }
+            catch (ExecutionException e)
+            {
+                if (e.getCause() instanceof SecDispatcherException)
+                    throw (SecDispatcherException)e.getCause();
+                else if (e.getCause() instanceof RuntimeException)
+                    throw (RuntimeException)e.getCause();
+                else if (e.getCause() instanceof Error)
+                    throw (Error)e.getCause();
+                else
+                    throw new RuntimeException(e);
+            }
+
             String entryName = str;
             getLogger().debug("Need to read entry '" + entryName + "' from KeepassXC");
 
@@ -268,6 +324,12 @@ implements PasswordDecryptor
             return null;
         else
             return raw.toString();
+    }
+
+    @Override
+    public void dispose()
+    {
+        proxyCacheByConfig.invalidateAll();
     }
 
     /**
