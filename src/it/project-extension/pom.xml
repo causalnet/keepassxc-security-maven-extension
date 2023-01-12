@@ -26,14 +26,24 @@
                 <version>3.0.0</version>
                 <executions>
                     <execution>
-                        <id>ant-echo</id>
+                        <id>ant-test-script</id>
                         <goals>
                             <goal>run</goal>
                         </goals>
-                        <phase>compile</phase>
+                        <phase>test</phase>
                         <configuration>
                             <target unless="maven.test.skip">
-                                <echo message="Good morning, what will be for eating? ${settings.servers.kdemo.username} ${settings.servers.kdemo.password}" />
+                                <propertyfile file="${project.build.directory}/server-passwords.properties">
+                                    <entry key="readPassword" value="${settings.servers.readPassword.password}" />
+                                    <entry key="readCustomField" value="${settings.servers.readCustomField.password}" />
+
+                                    <entry key="filterByUsername1" value="${settings.servers.filterByUsername1.password}" />
+                                    <entry key="filterByUsername2" value="${settings.servers.filterByUsername2.password}" />
+                                    <entry key="filterByTitle1" value="${settings.servers.filterByTitle1.password}" />
+                                    <entry key="filterByTitle3" value="${settings.servers.filterByTitle3.password}" />
+                                    <entry key="filterByCustomField1" value="${settings.servers.filterByCustomField1.password}" />
+                                    <entry key="filterByCustomField2" value="${settings.servers.filterByCustomField2.password}" />
+                                </propertyfile>
                             </target>
                         </configuration>
                     </execution>

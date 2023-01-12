@@ -5,9 +5,45 @@
 
     <servers>
         <server>
-            <id>kdemo</id>
-            <username>me</username>
+            <id>readPassword</id>
+            <username>notused</username>
             <password>{[type=keepassxc]https://aserver.test.test.test}</password>
+        </server>
+        <server>
+            <id>readCustomField</id>
+            <username>notused</username>
+            <password>{[type=keepassxc,select=somethingCustom]https://aserver.test.test.test}</password>
+        </server>
+
+        <server>
+            <id>filterByUsername1</id>
+            <username>notused</username>
+            <password>{[type=keepassxc,where:username=user1]https://multiserver.test.test.test}</password>
+        </server>
+        <server>
+            <id>filterByUsername2</id>
+            <username>notused</username>
+            <password>{[type=keepassxc,where:username=user2]https://multiserver.test.test.test}</password>
+        </server>
+        <server>
+            <id>filterByTitle1</id>
+            <username>notused</username>
+            <password>{[type=keepassxc,where:title=multiserver1]https://multiserver.test.test.test}</password>
+        </server>
+        <server>
+            <id>filterByTitle3</id>
+            <username>notused</username>
+            <password>{[type=keepassxc,where:title=multiserver3]https://multiserver.test.test.test}</password>
+        </server>
+        <server>
+            <id>filterByCustomField1</id>
+            <username>notused</username>
+            <password>{[type=keepassxc,where:myCustom=v1]https://multiserver.test.test.test}</password>
+        </server>
+        <server>
+            <id>filterByCustomField2</id>
+            <username>notused</username>
+            <password>{[type=keepassxc,where:myCustom=v2]https://multiserver.test.test.test}</password>
         </server>
     </servers>
 
