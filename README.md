@@ -8,6 +8,7 @@ browser extension works.
 ## Requirements
 
 - Maven 3.x
+- Java 17 or later (required for Java Unix domain sockets support)
 - KeepassXC running on your system
 
 ## Usage
@@ -60,4 +61,23 @@ but this installs it globally for all users.
 
 ## Advanced Usage
 
-TODO documentation
+### TODO 
+
+## Configuration
+
+### TODO
+
+## Building
+
+To build the project, run:
+
+```
+mvn clean install
+```
+
+### Integration Tests
+
+Integration tests are run manually - they require running KeepassXC on your desktop.
+
+- Open the database `itdata/it.kdbx` in KeepassXC, password is 'maventest'
+- Build and run the project with the 'keepass-its' profile enabled: `mvn clean install -P keepass-its`
