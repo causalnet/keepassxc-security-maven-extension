@@ -1,3 +1,7 @@
+//Passwords are read by the build from KeepassXC using our extension and written to server-passwords.properties
+//This script verifies that the passwords read by Maven were the same as what is in KeepassXC, testing that
+//extension is working
+
 File serverPasswordsFile = new File(basedir, 'target/server-passwords.properties')
 Properties serverPasswords = new Properties()
 serverPasswordsFile.withInputStream {

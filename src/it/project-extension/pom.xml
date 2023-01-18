@@ -13,6 +13,10 @@
 
     <build>
         <extensions>
+            <!--
+            This extension reads all settings.xml servers entries into properties that in the form of settings.servers.<server> which
+            can be read out by antrun.  The settings.xml servers entries are set up to use our extension and KeepassXC.
+            -->
             <extension>
                 <groupId>com.github.shyiko.servers-maven-extension</groupId>
                 <artifactId>servers-maven-extension</artifactId>
@@ -32,6 +36,11 @@
                         </goals>
                         <phase>test</phase>
                         <configuration>
+                            <!--
+                            Generate a target/server-passwords.properties file with passwords from some known servers entries from settings.xml.
+                            These entries have passwords that are in KeepassXC.  The verify.groovy script will run after this build and check
+                            that the passwords are what we expect from KeepassXC.
+                            -->
                             <target unless="maven.test.skip">
                                 <propertyfile file="${project.build.directory}/server-passwords.properties">
                                     <entry key="readPassword" value="${settings.servers.readPassword.password}" />
