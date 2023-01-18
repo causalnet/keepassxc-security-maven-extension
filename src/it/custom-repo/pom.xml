@@ -1,0 +1,98 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>au.net.causal.maven.plugins.keepassxc-security-maven-extension.it</groupId>
+    <artifactId>custom-repo</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <name>KeepassXC Extension Testing Project</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!--
+    A custom repository that hits wiremock that has our dependency file.
+    Wiremock is set up with basic auth, so this repo also has a server entry in settings.xml with a password using our extension.
+    -->
+    <repositories>
+        <repository>
+            <id>keepassxc-security-test-repo</id>
+            <url>http://localhost:8081/</url>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
+        </repository>
+    </repositories>
+
+    <build>
+        <plugins>
+            <!--
+            Wiremock will set up a fake server with authentication that will act as a Maven repository that the dependency
+            plugin will download a text file artifact from.
+            The repo ID will have configured credentials in settings.xml using a server entry with the password served by KeepassXC and our extension.
+            -->
+            <plugin>
+                <groupId>uk.co.automatictester</groupId>
+                <artifactId>wiremock-maven-plugin</artifactId>
+                <version>7.3.0</version>
+                <configuration>
+                    <params>--port=8081 --bind-address 127.0.0.1 --verbose</params>
+                    <dir>${project.basedir}/wiremock</dir>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>start-server</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <!-- Run as early as possible, this is acting as a Maven repo, though it should only be hit from the dependency plugin -->
+                        <phase>validate</phase>
+                    </execution>
+                    <execution>
+                        <id>stop-server</id>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                        <phase>post-integration-test</phase>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.github.tomakehurst</groupId>
+                        <artifactId>wiremock-jre8</artifactId>
+                        <version>2.35.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <artifactItems>
+                        <artifactItem>
+                            <groupId>au.net.causal.maven.plugins.keepassxctest</groupId>
+                            <artifactId>test-data</artifactId>
+                            <version>1.0</version>
+                            <type>txt</type>
+                            <destFileName>testdata.txt</destFileName>
+                        </artifactItem>
+                    </artifactItems>
+                    <outputDirectory>${project.build.directory}/deps</outputDirectory>
+                    <overWriteReleases>true</overWriteReleases>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

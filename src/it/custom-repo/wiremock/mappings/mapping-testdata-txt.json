@@ -1,0 +1,16 @@
+{
+  "id" : "3aa19238-cf15-361d-99ba-b19cf922e219",
+  "request" : {
+    "url" : "/au/net/causal/maven/plugins/keepassxctest/test-data/1.0/test-data-1.0.txt",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "bodyFileName" : "body-testdata.txt",
+    "headers" : {
+      "Date" : "Thu, 13 Oct 2022 04:34:31 GMT",
+      "Content-Type" : "text/plain"
+    }
+  },
+  "uuid" : "3aa19238-cf15-361d-99ba-b19cf922e219"
+}

@@ -45,6 +45,18 @@
             <username>notused</username>
             <password>{[type=keepassxc,where:myCustom=v2]https://multiserver.test.test.test}</password>
         </server>
+
+        <server>
+            <id>theFileServer</id>
+            <username>theuser</username>
+            <password>{[type=keepassxc]https://aserver.test.test.test}</password>
+        </server>
+
+        <server>
+            <id>keepassxc-security-test-repo</id>
+            <username>theuser</username>
+            <password>{[type=keepassxc]https://aserver.test.test.test}</password>
+        </server>
     </servers>
 
     <profiles>
