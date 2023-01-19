@@ -75,7 +75,41 @@ but this installs it globally for all users.
 
 ## Advanced Usage
 
-### TODO 
+### Custom attributes in Keepass entries
+
+[Custom attribute](https://keepassxc.org/docs/KeePassXC_UserGuide.html#_additional_attributes) 
+values may be read and/or filtered on by this extension.  The custom attribute names 
+[must be prefixed](https://keepassxc.org/docs/#faq-browser-string-fields) 
+with 'KPH: ' (including the space) so that any KeepassXC browser/extension can access it.
+This is not a restriction with this extension, but with KeepassXC itself.
+
+### Filtered selection
+
+In most cases, simply having an entry that selects by URL will be adequate.  However, 
+there may be cases where there are multiple entries with the same URL but having different
+other properties, such as username.  It is possible to make an settings.xml Keepass entry
+further narrow selection from Keepass using a filter.  For example:
+
+```
+<password>{[type=keepassxc,where:username=mymainuser]https://myserver.com}</password>
+```
+
+Use the syntax 'where:' followed by 'username', 'title', or a 
+[custom attribute](https://keepassxc.org/docs/KeePassXC_UserGuide.html#_additional_attributes)
+name.
+
+### Other entry values
+
+By default, the password of the KeepassXC is used for the value.  It is possible, however,
+to use [custom attributes](https://keepassxc.org/docs/KeePassXC_UserGuide.html#_additional_attributes) 
+instead using 'select'.  For example:
+
+```
+<password>{[type=keepassxc,select=someCustomAttribute]https://myserver.com}</password>
+```
+
+This will make the extension fill this settings.xml server entry's password from Keepass with the
+custom attribute 'someCustomAttribute' for `https://myserver.com` instead of its password.
 
 ## Configuration
 
