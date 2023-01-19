@@ -27,8 +27,22 @@ Maven will use the extension to read the password for `https://www.myserver.com`
 KeepassXC.  You will need an entry in your KeepassXC database for this URL and the database
 will need to be running and unlocked when using Maven.
 
-It is also possible to select KeepassXC entries not just by URL, but by username or custom 
+It is also possible to select KeepassXC entries not just by URL, but by username or custom
 attributes if needed.  It is also possible to read some custom attributes, not just passwords.
+
+If KeepassXC is not running or the database is not unlocked when Maven needs a password,
+a message will be displayed 
+`Maven needs to read passwords from Keepass, please unlock your database (timeout in PT20S)...`
+and the build will be blocked until you unlock your Keepass database, or it times out.
+
+For the first time connecting Maven to KeepassXC, you will be asked to associate the 
+Maven extension to KeepassXC, 
+[similarly to how the browser extension is paired](https://keepassxc.org/docs/KeePassXC_GettingStarted.html#_configure_keepassxc_browser).  
+When this happens, give the connection a name and the pairing will be remembered by the
+extension so you won't need to do this again.
+For each entry that Maven attempts to access, KeepassXC will ask you whether you allow 
+access (exactly how the browser extension works).  If you don't want this prompt to appear
+every time you run Maven, it is recommended to select 'Allow' and 'remember'.  
 
 ## Installation
 
