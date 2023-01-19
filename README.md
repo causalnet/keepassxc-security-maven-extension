@@ -123,7 +123,41 @@ custom attribute 'someCustomAttribute' for `https://myserver.com` instead of its
 
 ## Configuration
 
-### TODO
+This extension can run without any custom configuration.  However, configuration can be
+customized by adding a section to `settings-security.xml` in your `.m2` directory.
+Add a configuration XML fragment to settings-security for the keepassxc extension like this:
+
+```
+<settingsSecurity>
+    ...
+    <configurations>
+        <configuration>
+            <name>keepassxc</name>
+            <properties>            
+                <property>
+                    <name>unlockMaxWaitTime</name>
+                    <value>PT20S</value>
+                </property>
+            </properties>
+        </configuration>
+    </configurations>
+</settingsSecurity>
+```
+
+The following properties are supported:
+
+| Property Name           | Description                                                                                                                                                                                                                                                                                                                             | Default                                        |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------|
+| unlockMaxWaitTime       | Maximum duration to block builds, wait and prompt the user to open/unlock their database before failing.  Java Duration format.                                                                                                                                                                                                         | PT2M                                           |
+| unlockMessageRepeatTime | When waiting for the user to unlock/open the database, repeat the prompt message after this much time.  Java Duration format.                                                                                                                                                                                                           | PT5S                                           |
+| credentialsStoreFile    | Where to store the file that holds KeepassXC pairing information.  This is a file path, relative to the .m2 directory.                                                                                                                                                                                                                  | keepassxc-security-maven-extension-credentials |
+| failMode                | Either 'EMPTY_PASSWORD' or 'EXCEPTION'.  When 'EMPTY_PASSWORD', if KeepassXC is inaccessible or an entry cannot be found in the Keepass database, the extension will substitute an empty password.  When 'EXCEPTION', the extension will generate an exception which will cause Maven to log an error and leave the entry untranslated. | EMPTY_PASSWORD                                 |
+
+Be aware if failMode is set to EXCEPTION (not the default) and the extension cannot read a password from KeepassXC,
+the entry will remain untranslated.  This means for a password of 
+`{[type=keepassxc]https://www.myserver.com}` this _literal value_ (including the brackets)
+will be sent as the password for a server.  If you are worried about this metadata potentially
+being sent to servers which would normally be supplied a password, leave failMode as the default.
 
 ## Building
 
