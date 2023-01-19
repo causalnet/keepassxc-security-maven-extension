@@ -20,6 +20,14 @@ import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Mostly a copy of org.keepassxc.WindowsConnection but with close-tracking and a change to return an empty response from
+ * getCleartextResponse() when the connection is closed.  This is to avoid an extra message parse attempt once the connection is closed
+ * and a spurious error message that pollutes Maven output with extra unnecessary logging.
+ *
+ * @see org.keepassxc.WindowsConnection
+ */
+//This file should be almost exactly the same as the original except for the sections between "Change:" comments
 public class WindowsConnection extends AccessibleConnection
 {
     private static final Logger LOG = LoggerFactory.getLogger(WindowsConnection.class);

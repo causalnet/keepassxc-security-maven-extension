@@ -28,6 +28,12 @@ implements PasswordDecryptor, Disposable
     private final PasswordDecryptor passwordDecryptor;
     private final LoadingCache<DecryptKey, String> passwordCache;
 
+    /**
+     * Creates a caching password decryptor.
+     *
+     * @param passwordDecryptor the underlying decryptor to source passwords from.
+     * @param cacheExpireTime amount of time to keep passwords in the cache before expiring them.
+     */
     public CachingPasswordDecrypter(PasswordDecryptor passwordDecryptor, Duration cacheExpireTime)
     {
         this.passwordDecryptor = Objects.requireNonNull(passwordDecryptor);
@@ -81,6 +87,9 @@ implements PasswordDecryptor, Disposable
             ((Disposable)passwordDecryptor).dispose();
     }
 
+    /**
+     * Cache key for a settings.xml server entry that requires decryption.
+     */
     protected static class DecryptKey
     {
         private final String str;

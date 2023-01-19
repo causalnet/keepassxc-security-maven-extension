@@ -20,6 +20,14 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Mostly a copy of org.keepassxc.LinuxMacConnection but with a change to not log errors when the socket has been closed
+ * to avoid spamming Maven output with unnecessary logs.
+ *
+ * @see org.keepassxc.LinuxMacConnection
+ */
+//This file should be almost exactly the same as the original except for the sections between "Change:" comments
+
 public class LinuxMacConnection extends AccessibleConnection
 {
     private static final Logger LOG = LoggerFactory.getLogger(LinuxMacConnection.class);

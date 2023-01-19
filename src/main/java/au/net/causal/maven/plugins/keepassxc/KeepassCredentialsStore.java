@@ -10,7 +10,7 @@ import java.io.IOException;
 public interface KeepassCredentialsStore
 {
     /**
-     * Saves credentials to the perisent store.
+     * Saves credentials to the persistent store.
      *
      * @param credentials credentials to save.
      *

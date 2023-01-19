@@ -13,6 +13,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 
+/**
+ * Stores credentials as a serialized credentials object, the same as how the
+ */
 public class MavenKeepassCredentialsStore implements KeepassCredentialsStore
 {
     private static final Logger log = LoggerFactory.getLogger(MavenKeepassCredentialsStore.class);

@@ -26,10 +26,16 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * A password decryptor that reads passwords from a paired KeepassXC instance running on the user's system.
+ * <p>
+ *
  * To use this decrypter when it is registered, use something like the following in <code>settings.xml</code> for encrypted passwords:
  * <p>
  * 
  * <code>{[type=keepassxc]entryName}</code>
+ * <p>
+ *
+ * This decryptor is not registered with the Plexus container, but a {@linkplain CachingKeepassXcPasswordDecrypter caching wrapper} is.
  */
 public class KeepassXcPasswordDecrypter
 extends AbstractLogEnabled
@@ -39,6 +45,10 @@ implements PasswordDecryptor, Disposable
 
     private final Clock clock = Clock.systemUTC();
 
+    /**
+     * A cache with Decrypter config keys (the map sent from Maven in {@link #decrypt(String, Map, Map)}) and proxy values.  This is used to
+     * re-use KeepassXC connections and not constantly re-authenticate every time Maven asks for a single password.
+     */
     private final LoadingCache<Map<?, ?>, KeepassProxy> proxyCacheByConfig;
 
     public KeepassXcPasswordDecrypter()
@@ -57,6 +67,15 @@ implements PasswordDecryptor, Disposable
                     });
     }
 
+    /**
+     * Creates a new connection to KeepassXC.
+     *
+     * @param config configuration from settings-security.xml for the decryptor.  Might be empty.
+     *
+     * @return a new Keepass proxy connection.
+     *
+     * @throws SecDispatcherException if an error occurs making the connection.
+     */
     private KeepassProxy connectKeepassProxy(Map<?, ?> config)
     throws SecDispatcherException
     {
@@ -73,6 +92,15 @@ implements PasswordDecryptor, Disposable
         return connectKeepassProxy(credentialsStore, settings);
     }
 
+    /**
+     * Creates a new connection to KeepassXC given some extension settings.
+     *
+     * @param settings configuration for the decryptor.  Basically a type-safe version of the configuration passed from Maven, sourced from settings-security.xml.
+     *
+     * @return a new Keepass proxy connection.
+     *
+     * @throws SecDispatcherException if an error occurs making the connection.
+     */
     private KeepassProxy connectKeepassProxy(KeepassCredentialsStore credentialsStore, KeepassExtensionSettings settings)
     throws SecDispatcherException
     {
@@ -136,6 +164,13 @@ implements PasswordDecryptor, Disposable
         return kpa;
     }
 
+    /**
+     * Loads the credentials/pairing store for our KeepassXC client.  The credentials from this store are used for pairing with KeepassXC as a client.
+     *
+     * @param settings settings that specify where the credentials store exists.
+     *
+     * @return the store.
+     */
     protected KeepassCredentialsStore createCredentialsStore(KeepassExtensionSettings settings)
     {
         //May be absolute, but if relative resolve from the .m2 directory
@@ -254,6 +289,20 @@ implements PasswordDecryptor, Disposable
         }).findFirst().orElse(null);
     }
 
+    /**
+     * Creates filters from attributes configured on a decrypter entry.
+     * <p>
+     *
+     * Filter attributes are in the form "where:[field]=[value]", so for example in the entry:
+     * <pre>
+     *     {[type=keepassxc,where:username=user1]https://example.com}
+     * </pre>
+     * a single filter that ensures an entry's username is 'user1' will be returned.
+     *
+     * @param decrypterEntryAttributes attributes from the decrypter entry.
+     *
+     * @return a list of filters, possibly empty if there are no filter attributes.
+     */
     private List<? extends EntryFilter> filtersFromDecrypterEntryAttributes(Map<?, ?> decrypterEntryAttributes)
     {
         List<EntryFilter> filters = new ArrayList<>();
@@ -318,6 +367,9 @@ implements PasswordDecryptor, Disposable
         }
     }
 
+    /**
+     * Converts object to string, keeping null as null.
+     */
     private static String stringValue(Object raw)
     {
         if (raw == null)
@@ -329,18 +381,19 @@ implements PasswordDecryptor, Disposable
     @Override
     public void dispose()
     {
+        //Close any KeepassXC connections that are maintained in the cache
         proxyCacheByConfig.invalidateAll();
     }
 
     /**
+     * An entry returned from KeepassXC.
+     *
      * See:
      * <ul>
      *     <li><a href="https://github.com/keepassxreboot/keepassxc-browser/blob/develop/keepassxc-protocol.md#get-logins">KeepassXC protocol documentation</a></li>
      *     <li><a href="https://github.com/keepassxreboot/keepassxc/blob/2.7.4/src/browser/BrowserAction.cpp#L234">BrowserAction::handleGetLogins</a></li>
      *     <li><a href="https://github.com/keepassxreboot/keepassxc/blob/2.7.4/src/browser/BrowserService.cpp#L920">BrowserService::prepareEntry</a></li>
      * </ul>
-     *
-     *
      */
     private static class KeepassEntry
     {
@@ -414,6 +467,10 @@ implements PasswordDecryptor, Disposable
         }
     }
 
+    /**
+     * KeepassXC entry filter that may be used on a password entry in settings.xml.  If multiple KeepassXC entries match a URL, these filters may be
+     * specified by the user to pick specific entries, such as by username or by custom attribute.
+     */
     private static class EntryFilter
     {
         private final String key;
