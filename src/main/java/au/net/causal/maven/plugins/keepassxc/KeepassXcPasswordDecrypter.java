@@ -145,7 +145,7 @@ implements PasswordDecryptor, Disposable
                 Duration remainingTime = Duration.between(now, connectionMaxTime).truncatedTo(ChronoUnit.SECONDS); //truncate to seconds for a nicer message
                 if (lastMessageTime.plus(settings.getUnlockMessageRepeatTime()).isBefore(now))
                 {
-                    getLogger().info("Waiting for Keepass connection (timeout in " + remainingTime + ")...");
+                    getLogger().info("Maven needs to read passwords from Keepass, please unlock your database (timeout in " + remainingTime + ")...");
                     lastMessageTime = now;
                 }
 
