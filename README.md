@@ -72,6 +72,16 @@ your platform's path separator (';' on Windows, ':' on Mac/Linux).
 Alternatively, you can copy the extension's JAR file into your Maven installation's `lib/ext` directory,
 but this installs it globally for all users.
 
+### settings-security.xml
+
+A `settings-security.xml` file must exist in your `.m2` directory (under your user home directory) for this extension to work.
+Even if you KeepassXC for all your passwords and don't use 
+[Maven's built-in encryption/master key support](https://maven.apache.org/guides/mini/guide-encryption.html)
+this XML file still must exist, so if you don't have one, create an empty one containing:
+
+```
+<settingsSecurity />
+```
 
 ## Advanced Usage
 
