@@ -147,7 +147,7 @@ implements PasswordDecryptor, Disposable
 
         tryRepeat(settings,
                   "Maven needs to read passwords from KeepassXC, please unlock your database",
-                  "Failed to connect to KeepassXC",
+                  "Failed to connect to KeepassXC - database remained locked",
                   () ->
         {
             boolean iConnected = kpa.connectionAvailable();
@@ -201,7 +201,7 @@ implements PasswordDecryptor, Disposable
             Duration remainingTime = Duration.between(now, connectionMaxTime).truncatedTo(ChronoUnit.SECONDS); //truncate to seconds for a nicer message
             if (lastMessageTime.plus(settings.getUnlockMessageRepeatTime()).isBefore(now))
             {
-                getLogger().info(failMessage + " (timeout in " + remainingTime + ")...");
+                getLogger().error(failMessage + " (timeout in " + remainingTime + ")...");
                 lastMessageTime = now;
             }
 
@@ -215,7 +215,9 @@ implements PasswordDecryptor, Disposable
             }
         }
 
-        throw new SecDispatcherException(timeoutMessage + " (within " + settings.getUnlockMaxWaitTime() + ")");
+        String msg = timeoutMessage + " (within " + settings.getUnlockMaxWaitTime() + ")";
+        getLogger().error(msg);
+        throw new SecDispatcherException(msg);
     }
 
     /**
@@ -254,12 +256,20 @@ implements PasswordDecryptor, Disposable
 
                 //Handle cached failure
                 if (!possibleConnection.isSuccessfulConnection())
-                    throw possibleConnection.getFailure();
+                {
+                    //Don't normally log connection failures since the user went through the whole waiting/timeout thing with plenty of logging already
+                    getLogger().debug("Cached connection failure: " + possibleConnection.getFailure(), possibleConnection.getFailure());
 
+                    return settings.getFailMode().handleKeepassFailure(possibleConnection.getFailure());
+                }
+
+                //Successful connection (possibly cached) if we get here
                 kpa = possibleConnection.getConnection();
             }
             catch (ExecutionException e)
             {
+                //Normal errors do not come out through here, they are returned in ConnectionOrFailure
+                //But still handle runtime errors just in case
                 if (e.getCause() instanceof SecDispatcherException)
                     throw (SecDispatcherException)e.getCause();
                 else if (e.getCause() instanceof RuntimeException)
