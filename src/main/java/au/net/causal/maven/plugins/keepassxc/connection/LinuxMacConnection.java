@@ -59,7 +59,7 @@ public class LinuxMacConnection extends AccessibleConnection
         try {
             socket = SocketChannel.open(socketAddress);
         } catch (IOException e) {
-            LOG.error("Cannot connect to proxy. Is KeepassXC started?");
+            LOG.debug("Cannot connect to proxy. Is KeepassXC started?");
             throw e;
         }
         try {
