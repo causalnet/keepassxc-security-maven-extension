@@ -47,22 +47,31 @@ implements PasswordDecryptor, Disposable
 
     /**
      * A cache with Decrypter config keys (the map sent from Maven in {@link #decrypt(String, Map, Map)}) and proxy values.  This is used to
-     * re-use KeepassXC connections and not constantly re-authenticate every time Maven asks for a single password.
+     * re-use KeepassXC connections and not constantly re-authenticate every time Maven asks for a single password.  Values hold either a successful connection or
+     * the failure that occurred when attempting to connect with a specific config - caching failures there are no repeated attempts at prompting the user to
+     * unlock KeepassXC once a timeout has occurred.
      */
-    private final LoadingCache<Map<?, ?>, KeepassProxy> proxyCacheByConfig;
+    private final LoadingCache<Map<?, ?>, ConnectionOrFailure> proxyCacheByConfig;
 
     public KeepassXcPasswordDecrypter()
     {
         proxyCacheByConfig =
                 CacheBuilder.newBuilder()
-                    .<Map<?, ?>, KeepassProxy>removalListener(notification -> notification.getValue().close())
+                    .<Map<?, ?>, ConnectionOrFailure>removalListener(notification -> notification.getValue().close())
                     .build(new CacheLoader<>()
                     {
                         @Override
-                        public KeepassProxy load(Map<?, ?> config)
+                        public ConnectionOrFailure load(Map<?, ?> config)
                         throws Exception
                         {
-                            return connectKeepassProxy(config);
+                            try
+                            {
+                                return new ConnectionOrFailure(connectKeepassProxy(config));
+                            }
+                            catch (SecDispatcherException e)
+                            {
+                                return new ConnectionOrFailure(e);
+                            }
                         }
                     });
     }
@@ -241,7 +250,13 @@ implements PasswordDecryptor, Disposable
             KeepassProxy kpa;
             try
             {
-                kpa = proxyCacheByConfig.get(config);
+                ConnectionOrFailure possibleConnection = proxyCacheByConfig.get(config);
+
+                //Handle cached failure
+                if (!possibleConnection.isSuccessfulConnection())
+                    throw possibleConnection.getFailure();
+
+                kpa = possibleConnection.getConnection();
             }
             catch (ExecutionException e)
             {
@@ -564,5 +579,54 @@ implements PasswordDecryptor, Disposable
          */
         public void call()
         throws SecDispatcherException;
+    }
+
+    /**
+     * Holds either a successful Keepass proxy connection or a failure.
+     */
+    private static class ConnectionOrFailure implements AutoCloseable
+    {
+        private final KeepassProxy connection;
+        private final SecDispatcherException failure;
+
+        public ConnectionOrFailure(KeepassProxy connection)
+        {
+            this.connection = Objects.requireNonNull(connection);
+            this.failure = null;
+        }
+
+        public ConnectionOrFailure(SecDispatcherException failure)
+        {
+            this.connection = null;
+            this.failure = Objects.requireNonNull(failure);
+        }
+
+        public KeepassProxy getConnection()
+        {
+            if (!isSuccessfulConnection())
+                throw new IllegalStateException("No connection");
+
+            return connection;
+        }
+
+        public SecDispatcherException getFailure()
+        {
+            if (isSuccessfulConnection())
+                throw new IllegalStateException("No failure");
+
+            return failure;
+        }
+
+        public boolean isSuccessfulConnection()
+        {
+            return connection != null;
+        }
+
+        @Override
+        public void close()
+        {
+            if (isSuccessfulConnection())
+                getConnection().close();
+        }
     }
 }
