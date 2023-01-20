@@ -116,52 +116,97 @@ implements PasswordDecryptor, Disposable
             throw ex;
         }
 
-        try
+
+        tryRepeat(settings,
+                  "Maven needs to read passwords from KeepassXC, please start KeepassXC, ensure the 'Browser Extensions' option is enabled and open your database",
+                  "Failed to connect to KeepassXC",
+                  () ->
         {
-            kpa.connect();
-        }
-        catch (IOException e)
-        {
-            SecDispatcherException ex = new SecDispatcherException("Failed to connect to keepass", e);
-            getLogger().error(ex.getMessage(), ex);
-            throw ex;
-        }
+            try
+            {
+                kpa.connect();
+            }
+            catch (IOException e)
+            {
+                throw new SecDispatcherException("Failed to connect to KeepassXC: " + e.getMessage(), e);
+            }
+        });
 
         boolean connected = kpa.connectionAvailable();
         if (!connected)
             connected = kpa.associate();
 
-        try
+        tryRepeat(settings,
+                  "Maven needs to read passwords from KeepassXC, please unlock your database",
+                  "Failed to connect to KeepassXC",
+                  () ->
         {
-            //Always do first attempt - at the moment associate() always returns false to work around a bug in KeepassXC
-            connected = kpa.connectionAvailable();
-
-            Instant connectionStartTime = Instant.now(clock);
-            Instant connectionMaxTime = connectionStartTime.plus(settings.getUnlockMaxWaitTime());
-            Instant lastMessageTime = Instant.EPOCH;
-            while (!connected && Instant.now(clock).isBefore(connectionMaxTime))
-            {
-                Instant now = Instant.now(clock);
-                Duration remainingTime = Duration.between(now, connectionMaxTime).truncatedTo(ChronoUnit.SECONDS); //truncate to seconds for a nicer message
-                if (lastMessageTime.plus(settings.getUnlockMessageRepeatTime()).isBefore(now))
-                {
-                    getLogger().info("Maven needs to read passwords from Keepass, please unlock your database (timeout in " + remainingTime + ")...");
-                    lastMessageTime = now;
-                }
-
-                Thread.sleep(500L);
-                connected = kpa.connectionAvailable();
-            }
-
-            if (!connected)
-                throw new SecDispatcherException("Failed to connect to Keepass within " + settings.getUnlockMaxWaitTime());
-        }
-        catch (InterruptedException e)
-        {
-            throw new SecDispatcherException("Interrupted while waiting for KeepassXC", e);
-        }
+            boolean iConnected = kpa.connectionAvailable();
+            if (!iConnected)
+                throw new SecDispatcherException("Could not connect to KeepassXC");
+        });
 
         return kpa;
+    }
+
+    /**
+     * Runs a block of code multiple times until it succeeds or the unlock timeout it hit.  Non-success for the block is when it fails
+     * with a SecDispatcherException.
+     * <p>
+     *
+     * This method returns normally if, either initially or during a repeat, the code block succeeds.  If it times out, a
+     * SecDispatcherException is thrown.
+     *
+     * @param settings Keepass settings used to determine the timeout time and the message repeat time.
+     * @param failMessage message to display and possibly repeat to the user when the code block fails.
+     * @param timeoutMessage message to display on timeout.
+     * @param block the code block to execute, possibly multiple times.
+     *
+     * @throws SecDispatcherException if the block never once succeeded and the timeout time is exceeded.
+     */
+    private void tryRepeat(KeepassExtensionSettings settings, String failMessage, String timeoutMessage, RepeatBlock block)
+    throws SecDispatcherException
+    {
+        SecDispatcherException failureException = null;
+
+        //Staggered
+        Instant connectionStartTime = Instant.now(clock);
+        Instant connectionMaxTime = connectionStartTime.plus(settings.getUnlockMaxWaitTime());
+        Instant lastMessageTime = Instant.EPOCH;
+        while (failureException == null || Instant.now(clock).isBefore(connectionMaxTime))
+        {
+            try
+            {
+                block.call();
+
+                //If we succeed we are finished
+                return;
+            }
+            catch (SecDispatcherException e)
+            {
+                failureException = e;
+            }
+
+            //If we get here we failed to connect
+            Instant now = Instant.now(clock);
+            Duration remainingTime = Duration.between(now, connectionMaxTime).truncatedTo(ChronoUnit.SECONDS); //truncate to seconds for a nicer message
+            if (lastMessageTime.plus(settings.getUnlockMessageRepeatTime()).isBefore(now))
+            {
+                getLogger().info(failMessage + " (timeout in " + remainingTime + ")...");
+                lastMessageTime = now;
+            }
+
+            try
+            {
+                Thread.sleep(500L);
+            }
+            catch (InterruptedException e)
+            {
+                throw new SecDispatcherException("Interrupted while waiting for KeepassXC", e);
+            }
+        }
+
+        throw new SecDispatcherException(timeoutMessage + " (within " + settings.getUnlockMaxWaitTime() + ")");
     }
 
     /**
@@ -412,6 +457,13 @@ implements PasswordDecryptor, Disposable
             this.stringFields = Map.copyOf(stringFields);
         }
 
+        /**
+         * Parses an entry from JSON returned from a KeepassXC connection's getLogin call.
+         *
+         * @param json raw JSON in map form.  Nested maps, strings and primitives.
+         *
+         * @return the parsed entry.
+         */
         public static KeepassEntry parse(Map<?, ?> json)
         {
             String name = stringValue(json.get("name"));
@@ -497,5 +549,20 @@ implements PasswordDecryptor, Disposable
         {
             return getKey() + "=" + getValue();
         }
+    }
+
+    /**
+     * Piece of KeypassXC connection code that can potentially be repeated if it fails.
+     */
+    @FunctionalInterface
+    private static interface RepeatBlock
+    {
+        /**
+         * Executes the code block.  Returns normally when successful, or throws a SecDispatcherException on failure.
+         *
+         * @throws SecDispatcherException on failure.
+         */
+        public void call()
+        throws SecDispatcherException;
     }
 }
