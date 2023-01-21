@@ -3,6 +3,8 @@ package au.net.causal.maven.plugins.keepassxc.connection;
 import au.net.causal.maven.plugins.keepassxc.KeepassCredentialsStore;
 import org.apache.commons.lang3.SystemUtils;
 import org.keepassxc.Connection;
+import org.keepassxc.LinuxMacConnection;
+import org.keepassxc.WindowsConnection;
 import org.purejava.Credentials;
 import org.purejava.KeepassProxyAccessException;
 
