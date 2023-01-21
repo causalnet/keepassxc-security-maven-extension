@@ -1,8 +1,7 @@
 package au.net.causal.maven.plugins.keepassxc;
 
 import org.purejava.Credentials;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.codehaus.plexus.logging.Logger;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -18,13 +17,13 @@ import java.util.Objects;
  */
 public class MavenKeepassCredentialsStore implements KeepassCredentialsStore
 {
-    private static final Logger log = LoggerFactory.getLogger(MavenKeepassCredentialsStore.class);
-
     private final Path storeFile;
+    private final Logger log;
 
-    public MavenKeepassCredentialsStore(Path storeFile)
+    public MavenKeepassCredentialsStore(Path storeFile, Logger log)
     {
         this.storeFile = Objects.requireNonNull(storeFile);
+        this.log = Objects.requireNonNull(log);
     }
 
     @Override

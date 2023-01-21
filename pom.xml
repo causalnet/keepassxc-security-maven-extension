@@ -70,13 +70,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Provided by Maven, but if we don't have this they gets upgraded to compile scope because of keepass library -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.36</version>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -88,6 +81,28 @@
             <groupId>org.purejava</groupId>
             <artifactId>keepassxc-proxy-access</artifactId>
             <version>1.2.1</version>
+        </dependency>
+
+        <!--
+        SLF4J is provided by Maven, but from our extension we have no way to control the logging levels of packages.
+        KeepassXC proxy dependency uses SLF4J and has quite verbose logging which we want to supress in this extension.
+        To achieve this, we add slf4j-api and slf4j-nop as a compile time dependency intentionally (instead of provided)
+        and then let the shade plugin relocate SLF4J classes to our own prefixed package.
+        We can do this as long as we don't refer to SLF4J directly ourselves (and we don't - we use Plexus's logging wrapper anyway).
+        Using nop instead of simple because simple, while flexible, uses a simplelogger.properties in the classpath which is loaded using .getResource() (which finds the first file)
+        and since the classpath of all extensions is shared when running in lib/ext mode, if another extension uses this same hack one of them would break.
+        -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>1.7.36</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
@@ -254,6 +269,11 @@
                                 <relocation>
                                     <pattern>com.iwebpp.crypto</pattern>
                                     <shadedPattern>au.net.causal.maven.plugins.keepassxc.shaded.com.iwebpp.crypto</shadedPattern>
+                                </relocation>
+                                <!-- Just make sure we don't use SLF4J in our own code and always use Maven/Plexus's wrapper instead -->
+                                <relocation>
+                                    <pattern>org.slf4j</pattern>
+                                    <shadedPattern>au.net.causal.maven.plugins.keepassxc.shaded.org.slf4j</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

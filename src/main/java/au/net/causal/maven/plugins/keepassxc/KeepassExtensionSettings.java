@@ -1,7 +1,6 @@
 package au.net.causal.maven.plugins.keepassxc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.codehaus.plexus.logging.Logger;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -13,8 +12,6 @@ import java.util.Map;
  */
 public class KeepassExtensionSettings
 {
-    private static final Logger log = LoggerFactory.getLogger(KeepassExtensionSettings.class);
-
     private static final String CONFIG_KEY_CREDENTIALS_STORE_FILE = "credentialsStoreFile";
     private static final String CONFIG_KEY_UNLOCK_MAX_WAIT_TIME = "unlockMaxWaitTime";
     private static final String CONFIG_KEY_UNLOCK_MESSAGE_REPEAT_TIME = "unlockMessageRepeatTime";
@@ -34,21 +31,21 @@ public class KeepassExtensionSettings
      *
      * @param config configuration map.  Actually has string keys and values but Maven API uses raw map so no guarantees.
      */
-    public void configure(Map<?, ?> config)
+    public void configure(Map<?, ?> config, Logger log)
     {
         Path credentialsStoreFile = pathFromMapKey(config, CONFIG_KEY_CREDENTIALS_STORE_FILE);
         if (credentialsStoreFile != null)
             setCredentialsStoreFile(credentialsStoreFile);
 
-        Duration unlockMaxWaitTime = durationFromMapKey(config, CONFIG_KEY_UNLOCK_MAX_WAIT_TIME);
+        Duration unlockMaxWaitTime = durationFromMapKey(config, CONFIG_KEY_UNLOCK_MAX_WAIT_TIME, log);
         if (unlockMaxWaitTime != null)
             setUnlockMaxWaitTime(unlockMaxWaitTime);
 
-        Duration unlockMessageRepeatTime = durationFromMapKey(config, CONFIG_KEY_UNLOCK_MESSAGE_REPEAT_TIME);
+        Duration unlockMessageRepeatTime = durationFromMapKey(config, CONFIG_KEY_UNLOCK_MESSAGE_REPEAT_TIME, log);
         if (unlockMessageRepeatTime != null)
             setUnlockMessageRepeatTime(unlockMessageRepeatTime);
 
-        FailMode failMode = enumFromMapKey(config, CONFIG_KEY_FAIL_MODE, FailMode.class);
+        FailMode failMode = enumFromMapKey(config, CONFIG_KEY_FAIL_MODE, FailMode.class, log);
         if (failMode != null)
             setFailMode(failMode);
     }
@@ -93,7 +90,7 @@ public class KeepassExtensionSettings
      *
      * @return the value converted to a Duration, or null if no entry for the specified key exists in the map or the value could not be parsed.
      */
-    private static Duration durationFromMapKey(Map<?, ?> map, String key)
+    private static Duration durationFromMapKey(Map<?, ?> map, String key, Logger log)
     {
         String sValue = stringFromMapKey(map, key);
         if (sValue == null)
@@ -121,7 +118,7 @@ public class KeepassExtensionSettings
      *
      * @return the value converted to an enum value, or null if no entry for the specified key exists in the map or the value could not be parsed.
      */
-    private static <E extends Enum<E>> E enumFromMapKey(Map<?, ?> map, String key, Class<E> enumType)
+    private static <E extends Enum<E>> E enumFromMapKey(Map<?, ?> map, String key, Class<E> enumType, Logger log)
     {
         String sValue = stringFromMapKey(map, key);
         if (sValue == null)

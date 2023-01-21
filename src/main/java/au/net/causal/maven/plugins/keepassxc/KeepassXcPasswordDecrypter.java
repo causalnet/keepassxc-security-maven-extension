@@ -94,7 +94,7 @@ implements PasswordDecryptor, Disposable
             config = Map.copyOf(config);
 
         KeepassExtensionSettings settings = new KeepassExtensionSettings();
-        settings.configure(config);
+        settings.configure(config, getLogger());
 
         KeepassCredentialsStore credentialsStore = createCredentialsStore(settings);
 
@@ -232,7 +232,7 @@ implements PasswordDecryptor, Disposable
         //May be absolute, but if relative resolve from the .m2 directory
         Path credentialsStoreFile = CREDENTIALS_STORE_BASE_DIRECTORY.resolve(settings.getCredentialsStoreFile());
 
-        return new MavenKeepassCredentialsStore(credentialsStoreFile);
+        return new MavenKeepassCredentialsStore(credentialsStoreFile, getLogger());
     }
 
     @Override
@@ -245,7 +245,7 @@ implements PasswordDecryptor, Disposable
             config = Map.copyOf(config);
 
         KeepassExtensionSettings settings = new KeepassExtensionSettings();
-        settings.configure(config);
+        settings.configure(config, getLogger());
 
         try
         {

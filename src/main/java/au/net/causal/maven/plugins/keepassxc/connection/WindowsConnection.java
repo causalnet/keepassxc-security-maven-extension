@@ -50,6 +50,7 @@ public class WindowsConnection extends AccessibleConnection
      */
     @Override
     public void connect() throws IOException {
+        LOG.warn("This is a test log message");
         try {
             Path path = Paths.get("\\\\.\\pipe\\" + PROXY_NAME + "_" + System.getenv("USERNAME"));
             pipe = AsynchronousFileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
