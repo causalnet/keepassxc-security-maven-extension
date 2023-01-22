@@ -8,6 +8,17 @@
 
     <name>KeepassXC Security Maven Extension</name>
     <description>Extension to use KeepassXC for accessing Maven passwords</description>
+    <url>https://github.com/causalnet/keepassxc-security-maven-extension</url>
+
+    <inceptionYear>2023</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <properties>
     	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>    	
@@ -16,10 +27,23 @@
 
         <!--
         Set this to true locally to create non-shaded artifact which can be useful for debugging, but unshaded this extension will only
-        work from extensions.xml and not from lib/ext/with MAVEN_OPTS.
+        work from extensions.xml and not from lib/ext or with MAVEN_OPTS.
         -->
         <skipShade>false</skipShade>
     </properties>
+
+    <scm>
+        <connection>scm:git:git://github.com/causalnet/keepassxc-security-maven-extension.git</connection>
+        <developerConnection>scm:git:git://github.com/causalnet/keepassxc-security-maven-extension.git</developerConnection>
+        <url>https://github.com/causalnet/keepassxc-security-maven-extension</url>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 
 	<developers>
         <developer>
@@ -375,6 +399,29 @@
                                 <goals>
                                     <goal>install</goal>
                                     <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Only make GPG signatures during release -->
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.0.1</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
                                 </goals>
                             </execution>
                         </executions>
