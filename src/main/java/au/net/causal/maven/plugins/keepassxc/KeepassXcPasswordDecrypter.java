@@ -116,7 +116,7 @@ implements PasswordDecryptor, Disposable
         KeepassProxy kpa;
         try
         {
-            kpa = new KeepassProxy(credentialsStore);
+            kpa = new KeepassProxy(credentialsStore, getLogger());
         }
         catch (IOException e)
         {

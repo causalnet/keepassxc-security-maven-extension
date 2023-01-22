@@ -10,7 +10,10 @@ import java.io.ObjectStreamException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Stores credentials as a serialized credentials object, the same as how the
@@ -31,7 +34,19 @@ public class MavenKeepassCredentialsStore implements KeepassCredentialsStore
     throws IOException
     {
         Files.createDirectories(storeFile.getParent());
-        Path tmpPath = storeFile.resolveSibling(storeFile.getFileName() + ".tmp");
+        Path tmpPath;
+        try
+        {
+            tmpPath = Files.createTempFile(storeFile.getParent(), storeFile.getFileName().toString(), ".tmp",
+                                           PosixFilePermissions.asFileAttribute(Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)));
+        }
+        catch (IOException | UnsupportedOperationException e)
+        {
+            log.debug("Failed to set POSIX permissions on store file: " + e, e);
+
+            //Posix attributes may not be supported on this file system, or it just failed for some reason, fall back to not trying to set permissions
+            tmpPath = Files.createTempFile(storeFile.getParent(), storeFile.getFileName().toString(), ".tmp");
+        }
         try (ObjectOutputStream os = new ObjectOutputStream(Files.newOutputStream(tmpPath)))
         {
             os.writeObject(credentials);

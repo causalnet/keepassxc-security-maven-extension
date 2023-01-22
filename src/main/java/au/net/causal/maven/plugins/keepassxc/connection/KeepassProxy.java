@@ -2,6 +2,7 @@ package au.net.causal.maven.plugins.keepassxc.connection;
 
 import au.net.causal.maven.plugins.keepassxc.KeepassCredentialsStore;
 import org.apache.commons.lang3.SystemUtils;
+import org.codehaus.plexus.logging.Logger;
 import org.keepassxc.Connection;
 import org.keepassxc.LinuxMacConnection;
 import org.keepassxc.WindowsConnection;
@@ -27,17 +28,21 @@ public class KeepassProxy implements AutoCloseable
     private final KeepassCredentialsStore credentialsStore;
     private final CredentialsUpdater credentialsUpdater;
 
+    private final Logger log;
+
     /**
      * Creates the proxy.
      *
      * @param credentialsStore loads/stores Keepass {@linkplain Credentials} used for accessing Keepass.
+     * @param log logger.
      *
      * @throws IOException if an error occurs loading Keepass credentials from the store.
      */
-    public KeepassProxy(KeepassCredentialsStore credentialsStore)
+    public KeepassProxy(KeepassCredentialsStore credentialsStore, Logger log)
     throws IOException
     {
         this.credentialsStore = Objects.requireNonNull(credentialsStore);
+        this.log = Objects.requireNonNull(log);
 
         if (SystemUtils.IS_OS_WINDOWS)
             connection = new WindowsConnection();
@@ -58,8 +63,9 @@ public class KeepassProxy implements AutoCloseable
         }
         catch (IOException e)
         {
-            //TODO better exception handling
-            throw new RuntimeException(e);
+            log.error("Error saving KeepassXC pairing credentials to file: " + e.getMessage(), e);
+
+            //Couldn't save, don't throw runtimeexception because that stops entire decryptor from working
         }
     }
 
