@@ -16,3 +16,6 @@ assert serverPasswords.filterByTitle1 == 'password1'
 assert serverPasswords.filterByTitle3 == 'password3'
 assert serverPasswords.filterByCustomField1 == 'password1'
 assert serverPasswords.filterByCustomField2 == 'password2'
+
+//failMode is EMPTY_PASSWORD by default
+assert serverPasswords.entryDoesNotExistInKeepass == ''

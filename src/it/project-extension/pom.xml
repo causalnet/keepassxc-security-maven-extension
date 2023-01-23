@@ -52,6 +52,8 @@
                                     <entry key="filterByTitle3" value="${settings.servers.filterByTitle3.password}" />
                                     <entry key="filterByCustomField1" value="${settings.servers.filterByCustomField1.password}" />
                                     <entry key="filterByCustomField2" value="${settings.servers.filterByCustomField2.password}" />
+
+                                    <entry key="entryDoesNotExistInKeepass" value="${settings.servers.entryDoesNotExistInKeepass.password}" />
                                 </propertyfile>
                             </target>
                         </configuration>

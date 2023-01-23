@@ -47,6 +47,12 @@
         </server>
 
         <server>
+            <id>entryDoesNotExistInKeepass</id>
+            <username>notused</username>
+            <password>{[type=keepassxc]https://thisisnotinkeepass.test.test.test}</password>
+        </server>
+
+        <server>
             <id>theFileServer</id>
             <username>theuser</username>
             <password>{[type=keepassxc]https://aserver.test.test.test}</password>
