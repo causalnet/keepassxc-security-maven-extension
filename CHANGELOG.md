@@ -1,6 +1,6 @@
 # Change Log
 
 ### 1.0
-not yet released
+2023-01-23
 
 - Initial version
