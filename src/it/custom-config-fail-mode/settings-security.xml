@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settingsSecurity>
+    <configurations>
+        <configuration>
+            <name>keepassxc</name>
+            <properties>
+                <property>
+                    <name>failMode</name>
+                    <value>EXCEPTION</value>
+                </property>
+            </properties>
+        </configuration>
+    </configurations>
+</settingsSecurity>
