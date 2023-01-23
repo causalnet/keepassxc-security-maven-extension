@@ -9,10 +9,10 @@ import java.time.Duration;
  * KeepassXC password decryptor that caches passwords read from KeepassXC to avoid rereading.
  */
 @Component(role= PasswordDecryptor.class, hint="keepassxc")
-public class CachingKeepassXcPasswordDecrypter extends CachingPasswordDecrypter
+public class CachingKeepassXcPasswordDecryptor extends CachingPasswordDecryptor
 {
-    public CachingKeepassXcPasswordDecrypter()
+    public CachingKeepassXcPasswordDecryptor()
     {
-        super(new KeepassXcPasswordDecrypter(), Duration.ofMinutes(1L));
+        super(new KeepassXcPasswordDecryptor(), Duration.ofMinutes(1L));
     }
 }

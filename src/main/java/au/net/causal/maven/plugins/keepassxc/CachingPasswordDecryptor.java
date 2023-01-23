@@ -19,9 +19,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A wrapper for another password decrypter that caches decryption results for a certain amount of time.
+ * A wrapper for another password decryptor that caches decryption results for a certain amount of time.
  */
-public class CachingPasswordDecrypter
+public class CachingPasswordDecryptor
 extends AbstractLogEnabled
 implements PasswordDecryptor, Disposable
 {
@@ -34,7 +34,7 @@ implements PasswordDecryptor, Disposable
      * @param passwordDecryptor the underlying decryptor to source passwords from.
      * @param cacheExpireTime amount of time to keep passwords in the cache before expiring them.
      */
-    public CachingPasswordDecrypter(PasswordDecryptor passwordDecryptor, Duration cacheExpireTime)
+    public CachingPasswordDecryptor(PasswordDecryptor passwordDecryptor, Duration cacheExpireTime)
     {
         this.passwordDecryptor = Objects.requireNonNull(passwordDecryptor);
         passwordCache =

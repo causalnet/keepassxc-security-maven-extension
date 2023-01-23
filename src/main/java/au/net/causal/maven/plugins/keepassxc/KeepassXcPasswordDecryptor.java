@@ -35,9 +35,9 @@ import java.util.concurrent.ExecutionException;
  * <code>{[type=keepassxc]entryName}</code>
  * <p>
  *
- * This decryptor is not registered with the Plexus container, but a {@linkplain CachingKeepassXcPasswordDecrypter caching wrapper} is.
+ * This decryptor is not registered with the Plexus container, but a {@linkplain CachingKeepassXcPasswordDecryptor caching wrapper} is.
  */
-public class KeepassXcPasswordDecrypter
+public class KeepassXcPasswordDecryptor
 extends AbstractLogEnabled
 implements PasswordDecryptor, Disposable
 {
@@ -53,7 +53,7 @@ implements PasswordDecryptor, Disposable
      */
     private final LoadingCache<Map<?, ?>, ConnectionOrFailure> proxyCacheByConfig;
 
-    public KeepassXcPasswordDecrypter()
+    public KeepassXcPasswordDecryptor()
     {
         proxyCacheByConfig =
                 CacheBuilder.newBuilder()
