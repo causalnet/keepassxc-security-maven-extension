@@ -6,6 +6,10 @@
     <version>1.0-SNAPSHOT</version>
 
     <name>KeepassXC Extension Testing Project</name>
+    <description>
+        Load the extension by .mvn/extensions.xml and test it using servers extension and antrun.
+    </description>
+
 
     <properties>
     	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>    	
