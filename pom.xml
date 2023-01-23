@@ -3,7 +3,7 @@
 
     <groupId>au.net.causal.maven.plugins</groupId>
     <artifactId>keepassxc-security-maven-extension</artifactId>
-    <version>1.0</version>
+    <version>1.1-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>KeepassXC Security Maven Extension</name>
@@ -36,7 +36,7 @@
         <connection>scm:git:git@github.com:causalnet/keepassxc-security-maven-extension.git</connection>
         <developerConnection>scm:git:git@github.com:causalnet/keepassxc-security-maven-extension.git</developerConnection>
         <url>https://github.com/causalnet/keepassxc-security-maven-extension</url>
-      <tag>keepassxc-security-maven-extension-1.0</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <distributionManagement>
