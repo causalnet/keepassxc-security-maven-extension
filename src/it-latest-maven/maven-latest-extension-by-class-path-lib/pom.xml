@@ -1,0 +1,96 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>au.net.causal.maven.plugins.keepassxc-security-maven-extension.it</groupId>
+    <artifactId>maven-multiversion-project-extension</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <name>KeepassXC Extension Testing Project</name>
+    <description>
+        Load the extension by .mvn/extensions.xml and test it using servers extension and antrun, testing with multiple Maven versions.
+    </description>
+
+
+    <properties>
+    	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Gets replaced with latest Maven release after running versions:update-properties -->
+        <maven.version>3.9.1</maven.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-core</artifactId>
+            <version>${maven.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <extensions>
+            <!--
+            This extension reads all settings.xml servers entries into properties that in the form of settings.servers.<server> which
+            can be read out by antrun.  The settings.xml servers entries are set up to use our extension and KeepassXC.
+            -->
+            <extension>
+                <groupId>com.github.shyiko.servers-maven-extension</groupId>
+                <artifactId>servers-maven-extension</artifactId>
+                <version>1.3.1</version>
+            </extension>
+        </extensions>
+        <plugins>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>2.7</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-wrapper-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <mavenVersion>${maven.version}</mavenVersion>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>ant-test-script</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <phase>test</phase>
+                        <configuration>
+                            <!--
+                            Generate a target/server-passwords.properties file with passwords from some known servers entries from settings.xml.
+                            These entries have passwords that are in KeepassXC.  The verify.groovy script will run after this build and check
+                            that the passwords are what we expect from KeepassXC.
+                            -->
+                            <target unless="maven.test.skip">
+                                <propertyfile file="${project.build.directory}/server-passwords.properties">
+                                    <entry key="readPassword" value="${settings.servers.readPassword.password}" />
+                                    <entry key="readCustomField" value="${settings.servers.readCustomField.password}" />
+
+                                    <entry key="filterByUsername1" value="${settings.servers.filterByUsername1.password}" />
+                                    <entry key="filterByUsername2" value="${settings.servers.filterByUsername2.password}" />
+                                    <entry key="filterByTitle1" value="${settings.servers.filterByTitle1.password}" />
+                                    <entry key="filterByTitle3" value="${settings.servers.filterByTitle3.password}" />
+                                    <entry key="filterByCustomField1" value="${settings.servers.filterByCustomField1.password}" />
+                                    <entry key="filterByCustomField2" value="${settings.servers.filterByCustomField2.password}" />
+
+                                    <entry key="entryDoesNotExistInKeepass" value="${settings.servers.entryDoesNotExistInKeepass.password}" />
+                                </propertyfile>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
