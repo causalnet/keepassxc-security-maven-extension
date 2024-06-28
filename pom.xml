@@ -99,7 +99,6 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.8.1</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -320,6 +319,10 @@
                                 <relocation>
                                     <pattern>org.json</pattern>
                                     <shadedPattern>au.net.causal.maven.plugins.keepassxc.shaded.org.json</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.lang3</pattern>
+                                    <shadedPattern>au.net.causal.maven.plugins.keepassxc.shaded.org.apache.commons.lang3</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.iwebpp.crypto</pattern>
